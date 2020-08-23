@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ei41.base.mapper.UserMapper">
+	<select id="queryUserList" resultType="com.ei41.base.model.User">
+		SELECT[userId]
+		,[userName]
+		,[password]
+		,[realName]
+		,[email]
+		,[telNumber]
+		,[deptId]
+		,[divisionId]
+		,[systemAdmin]
+		,[deptAdmin]
+		,[orgId]
+		FROM
+		[dbo].[BASE_COMMON_USER]
+	</select>
+
+	<select id="findUserById" resultType="com.ei41.base.model.User"
+		parameterType="Long">
+		SELECT [userId]
+		,[userName]
+		,[password]
+		,[realName]
+		,[email]
+		,[telNumber]
+		,[deptId]
+		,[divisionId]
+		,[systemAdmin]
+		,[deptAdmin]
+		,[orgId]
+		FROM
+		[dbo].[BASE_COMMON_USER] where [userId] =
+		#{userId}
+	</select>
+
+	<select id="findUserByName" resultType="com.ei41.base.model.User">
+		SELECT [userId]
+		,[userName]
+		,[password]
+		,[realName]
+		,[email]
+		,[telNumber]
+		,[deptId]
+		,[divisionId]
+		,[systemAdmin]
+		,[deptAdmin]
+		,[orgId]
+		FROM
+		[dbo].[BASE_COMMON_USER] where [userName] =
+		#{userName} and
+		orgId=#{orgId}
+	</select>
+
+
+	<select id="searchUserList" resultType="com.ei41.base.model.User">
+		<bind name="key" value="'%'+(keyword==null?'':keyword)+'%'" />
+		SELECT [userId]
+		,[userName]
+		,[password]
+		,[realName]
+		,[email]
+		,[telNumber]
+		,[deptId]
+		,[divisionId]
+		,[systemAdmin]
+		,[deptAdmin]
+		,[orgId]
+		FROM
+		[dbo].[BASE_COMMON_USER]
+		where 1=1
+		<if test="keyword != null and !keyword.equals('') ">
+			and userName like #{key}
+		</if>
+		<if test="deptId!= null and !deptId.equals('')">
+			and deptId=#{deptId}
+		</if>
+		<if test="orgId!= null and !orgId.equals('')">
+			and orgId=#{orgId}
+		</if>
+	</select>
+
+
+
+	<insert id="createUser" parameterType="com.ei41.base.model.User">
+		INSERT INTO
+		[dbo].[BASE_COMMON_USER]
+		([userName]
+		,[password]
+		,[realName]
+		,[email]
+		,[telNumber]
+		,[deptId]
+		,[divisionId],[systemAdmin],[deptAdmin],[orgId]
+		)
+		VALUES
+		(#{userName},
+		#{password}, #{realName},
+		#{email},#{telNumber},#{deptId},#{divisionId},#{systemAdmin},#{deptAdmin},#{orgId})
+	</insert>
+
+	<update id="updateUser" parameterType="com.ei41.base.model.User">
+		UPDATE
+		[dbo].[BASE_COMMON_USER]
+		set userName =
+		#{userName},
+		password =
+		#{password},
+		realName = #{realName},
+		email =
+		#{email},
+		telNumber =
+		#{telNumber},
+		deptId =
+		#{deptId},
+		divisionId=
+		#{divisionId},
+		systemAdmin =
+		#{systemAdmin},
+		deptAdmin =
+		#{deptAdmin},
+		orgId=
+		#{orgId}
+		where userId =
+		#{userId}
+	</update>
+
+	<delete id="deleteUser">
+		DELETE FROM [dbo].[BASE_COMMON_USER] where
+		userId =
+		#{userId}
+	</delete>
+
+
+	<select id="searchRoleMembers" resultType="com.ei41.base.model.User">
+		SELECT [dbo].[BASE_SECURITY_REL_ROLE_USER].[userId]
+		,[userName]
+		,[password]
+		,[realName]
+		,[email]
+		,[telNumber]
+		,[deptId]
+		,[divisionId]
+		,[systemAdmin]
+		,[deptAdmin]
+		,[dbo].[BASE_COMMON_USER].[orgId]
+		FROM
+		[dbo].[BASE_COMMON_USER]
+		inner join
+		[dbo].[BASE_SECURITY_REL_ROLE_USER]
+		on [dbo].[BASE_COMMON_USER].[userid] =[dbo].[BASE_SECURITY_REL_ROLE_USER].[userId]
+		inner join [dbo].[BASE_SECURITY_ROLE]
+		on [dbo].[BASE_SECURITY_REL_ROLE_USER].[roleId] =
+		[dbo].[BASE_SECURITY_ROLE].[roleId]
+		where [dbo].[BASE_SECURITY_ROLE].[roleId] =#{roleId};
+	</select>
+
+
+
+
+	<!-- <delete id="delUsers"> delete from user where id in <foreach collection="list" 
+		item="item" open="(" separator="," close=")"> #{item} </foreach> </delete> -->
+</mapper>

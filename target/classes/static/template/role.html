@@ -1,0 +1,626 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../javascript/boot1.js" type="text/javascript"></script>
+<script src="../common/TreeSelectWindow.js" type="text/javascript"></script>
+<script src="../common/UserSelectWindow.js" type="text/javascript"></script>
+<script src="../common/DepartMentSelectWindow.js" type="text/javascript"></script>
+<script type="text/javascript">
+	$(function($) {
+		mini.parse();
+		setEditState(false);
+		mini.get("role-grid").load({
+			keyword : ""
+		});
+	});
+	function search() {
+		mini.get("role-grid").load({
+			keyword : mini.get("keyword").getValue()
+		});
+	}
+
+	function onKeyEnter(e) {
+		search();
+	}
+
+	function setEditState(isEdit) {
+		if (isEdit) {
+			mini.get("rightButton").enable();
+		} else {
+			mini.get("rightButton").disable();
+
+		}
+	}
+	function onActionRenderer(e) {
+		var grid = e.sender;
+		var record = e.record;
+		var uid = record._uid;
+		var rowIndex = e.rowIndex;
+
+		var s = ' <a class="Edit_Button" href="javascript:editRow(\'' + uid
+				+ '\')">编辑</a>'
+				+ ' <a class="Delete_Button" href="javascript:delRow(\'' + uid
+				+ '\')">删除</a>';
+
+		if (grid.isEditingRow(record)) {
+			s = ' <a class="Update_Button" href="javascript:updateRow()">更新</a>'
+					+ ' <a class="Cancel_Button" href="javascript:cancelRow()">取消</a>'
+		}
+		return s;
+	}
+
+	function createRow() {
+		var grid = mini.get("role-grid");
+		var row = {
+			roleName : "",
+			allUser : false,
+			orgId : 1
+		};
+
+		grid.addRow(row, 0);
+		grid.cancelEdit();
+		grid.beginEditRow(row);
+	}
+	function refresh() {
+		mini.get("role-grid").reload();
+	}
+
+	function editRow(row_uid) {
+		var grid = mini.get("role-grid");
+		var row = grid.getRowByUID(row_uid);
+		if (row) {
+			grid.cancelEdit();
+			grid.beginEditRow(row);
+		}
+	}
+
+	function cancelRow() {
+		mini.get("role-grid").reload();
+	}
+
+	function delRow(row_uid) {
+		var grid = mini.get("role-grid");
+		var row = grid.getRowByUID(row_uid);
+
+		if (row) {
+			if (confirm("确定删除此记录？")) {
+				grid.loading("删除中，请稍后......");
+				var removedArray = [];
+				removedArray.push(row.roleId);
+				$.ajax({
+					type : "delete",
+					url : "/role/delete",
+					contentType : "application/json",
+					data : mini.encode(removedArray),
+					success : function(text) {
+						grid.reload();
+					},
+					error : function() {
+					}
+				});
+			}
+		}
+	}
+
+	function updateRow() {
+		var grid = mini.get("role-grid");
+		grid.commitEdit();
+		grid.validate();
+		if (grid.isValid()) {
+			var rows = grid.getChanges();
+			var addedArray = [];
+			var modifiedArray = [];
+			for (var i = 0; i < rows.length; i++) {
+				if (rows[i]._state == "added") {
+					addedArray.push(rows[i]);
+				} else if (rows[i]._state == "modified") {
+					modifiedArray.push(rows[i]);
+				}
+			}
+			if (addedArray.length > 0) {
+				$.ajax({
+					type : "post",
+					url : "/role/create",
+					contentType : "application/json",
+					data : mini.encode(addedArray),
+					success : function(data) {
+						mini.alert("创建成功！");
+						grid.reload();
+					},
+					error : function(XMLHttpRequest, textStatus, errorThrown) {
+						mini.alert("创建失败：" + errorThrown);
+						grid.reload();
+					}
+				});
+			}
+
+			if (modifiedArray.length > 0) {
+				$.ajax({
+					type : "put",
+					url : "/role/edit",
+					contentType : "application/json",
+					data : mini.encode(modifiedArray),
+					success : function(data) {
+						mini.alert("更新成功！");
+						grid.reload();
+					},
+					error : function(XMLHttpRequest, textStatus, errorThrown) {
+						mini.alert("更新失败：" + errorThrown);
+						grid.reload();
+					}
+				});
+			}
+
+		} else {
+			mini.alert("存在不合法的数据，请修改后重新提交");
+		}
+	}
+
+	function onSelectionChanged(e) {
+
+		var grid = e.sender;
+		var record = grid.getSelected();
+		if (record && record.roleId) {
+			mini.get("member-grid").load({
+				roleId : record.roleId
+			});
+			if (record.allUser) {
+
+				mini.get("addRoleUserButton").disable();
+				mini.get("deleteRoleUserButton").disable();
+			} else {
+				mini.get("addRoleUserButton").enable();
+				mini.get("deleteRoleUserButton").enable();
+			}
+			mini.get("action-grid").load(
+					"/role/resource?roleId=" + record.roleId + "&tree=true");
+		}
+		setEditState(false);
+	}
+
+	function onResourceSelectionChanged(e) {
+		var actoinGrid = e.sender;
+		var record = actoinGrid.getSelected();
+
+		if ((record.rank == 2) || (record.rank == 4)) {
+			setEditState(true)
+		} else {
+			setEditState(false)
+		}
+
+	}
+
+	function addRoleMembers() {
+		var win = new UserSelectWindow();
+		win.set({
+			url : "/user/userList",
+			title : "选择角色成员",
+			KeyField : "keyword",
+			multiSelect : true,
+			width : 600,
+			height : 350
+		});
+
+		win.show();
+		win.search("");
+
+		//初始化数据
+		win.setData(null, function(action) {
+			if (action == "ok") {
+				//获取数据
+				var rows = win.getData();
+				if (rows.length > 0) {
+					var userNums = new Array();
+					for (var index = 0; index < rows.length; index++) {
+						userNums.add(rows[index].userId);
+					}
+					var role = mini.get("role-grid").getSelected();
+					$.ajax({
+						type : "post",
+						data : mini.encode(userNums),
+						contentType : "application/json",
+						url : "/role/member/" + role.roleId,
+						success : function(text) {
+							mini.get("member-grid").reload();
+						},
+						error : function() {
+
+						}
+					});
+				}
+			}
+		});
+	}
+	function removeRoleMembers() {
+		var rows = mini.get("member-grid").getSelecteds();
+		if (rows.length > 0) {
+			var userNums = new Array();
+			for (var index = 0; index < rows.length; index++) {
+				userNums.add(rows[index].userId);
+			}
+			var role = mini.get("role-grid").getSelected();
+			$.ajax({
+				type : "delete",
+				data : mini.encode(userNums),
+				contentType : "application/json",
+				url : "/role/member/" + role.roleId,
+				success : function(text) {
+					mini.get("member-grid").reload();
+				},
+				error : function() {
+				}
+			});
+		}
+	}
+	function setRoleActions() {
+		var win = new TreeSelectWindow();
+		win.set({
+			url : "/resource/resourceList",
+			title : "选择树形",
+			multiSelect : true,
+			showFolderCheckBox : true,
+			checkRecursive : true,
+			showToolbar : false,
+			width : 500,
+			height : 500
+		});
+
+		win.show();
+		var role = mini.get("role-grid").getSelected();
+		$.ajax({
+			type : "get",
+			url : "/role/resource?roleId=" + role.roleId + "&tree=false",
+			success : function(actions) {
+				win.setData(actions, function(action) {
+					if (action == "ok") {
+						//获取数据
+						var nodes = win.getData();
+						if (nodes.length > 0) {
+							var resourceIds = new Array();
+							for (var index = 0; index < nodes.length; index++) {
+								resourceIds.add(nodes[index].resourceId);
+							}
+							var json = mini.encode(resourceIds);
+
+							$.ajax({
+								type : "put",
+								data : mini.encode(resourceIds),
+								contentType : "application/json",
+								url : "/role/resource/" + role.roleId,
+								success : function(text) {
+									mini.get("action-grid").load(
+											"/role/resource?roleId="
+													+ role.roleId
+													+ "&tree=true");
+								},
+								error : function() {
+								}
+							});
+						}
+					}
+				});
+			},
+			error : function() {
+			}
+		});
+	}
+
+	function setRoleDateRights() {
+
+		var actoingrid = mini.get("action-grid");
+		var row = actoingrid.getSelected();
+
+		if (row) {
+			if (row.rank == 1) {
+				mini.alert("个人级别不需要定制");
+			}
+			if (row.rank == 2) {
+
+				configPersonal(row);
+
+			}
+			if (row.rank == 3) {
+
+				mini.alert("部门级别不需要定制");
+			}
+			if (row.rank == 4) {
+
+				configDepartment(row);
+
+			}
+			if (row.rank == 5) {
+				mini.alert("组织级别不需要定制");
+			}
+
+		} else {
+			mini.alert("请选择相应权限");
+
+		}
+	}
+
+	function configPersonal(row) {
+
+		mini.open({
+			url : "userRightsSelect.html",
+			title : "个人列表清单",
+			width : 1000,
+			height : 600,
+			onload : function() {
+				var iframe = this.getIFrameEl();
+				iframe.contentWindow.load(row.dataRightsId);
+			},
+			ondestroy : function(action) {
+				if (action == "ok") {
+					var iframe = this.getIFrameEl();
+					var nodes = iframe.contentWindow.getResults();
+
+					if (nodes.length > 0) {
+						var userNames = new Array();
+						var userIds = new Array();
+						var userInfo = [];
+
+						for (var index = 0; index < nodes.length; index++) {
+							//	deptIds.add(nodes[index].deptId);
+							userNames.add(nodes[index].userName);
+							userIds.add(nodes[index].userId);
+							//	alert(nodes[index].userId);
+							userInfo.push({
+								dataRightsId : row.dataRightsId,
+								roleResourcesId : row.roleResourcesId,
+								rights : nodes[index].userId,
+								rightsDescription : nodes[index].userName
+							});
+						}
+						var json = mini.encode(userIds);
+						var role = mini.get("role-grid").getSelected();
+						//	alert(json);
+
+						$.ajax({
+							type : "put",
+							data : mini.encode(userInfo),
+							contentType : "application/json",
+							url : "/dataRights/dataRightsDefine/",
+							success : function(text) {
+								mini.get("action-grid").load(
+										"/role/resource?roleId=" + role.roleId
+												+ "&tree=true");
+							},
+							error : function() {
+							}
+						});
+
+					} else {
+						mini.alert("必须指定值，配置失败");
+					}
+
+				}
+			}
+		});
+
+	}
+
+	function configDepartment(row) {
+
+		var win = new DepartMentSelectWindow();
+		win.set({
+			url : "/department/deptList",
+			title : "选择树形",
+			multiSelect : true,
+			showFolderCheckBox : true,
+			checkRecursive : true,
+			showToolbar : false,
+			width : 500,
+			height : 500
+		});
+
+		win.show();
+		var role = mini.get("role-grid").getSelected();
+
+		$.ajax({
+			type : "get",
+			url : "/dataRights/department?dataRightsId=" + row.dataRightsId
+					+ "&tree=false",
+			success : function(actions) {
+				win.setData(actions, function(action) {
+					if (action == "ok") {
+						//获取数据
+						var nodes = win.getData();
+						if (nodes.length > 0) {
+							var deptIds = new Array();
+							var deptNames = new Array();
+							var deptInfo = [];
+
+							for (var index = 0; index < nodes.length; index++) {
+								deptIds.add(nodes[index].deptId);
+								deptNames.add(nodes[index].deptName);
+								deptInfo.push({
+									dataRightsId : row.dataRightsId,
+									roleResourcesId : row.roleResourcesId,
+									rights : nodes[index].deptId,
+									rightsDescription : nodes[index].deptName
+								});
+							}
+							//	var json = mini.encode(deptNames);
+
+							//		alert(json);
+
+							$.ajax({
+								type : "put",
+								data : mini.encode(deptInfo),
+								contentType : "application/json",
+								url : "/dataRights/dataRightsDefine/",
+								success : function(text) {
+									mini.get("action-grid").load(
+											"/role/resource?roleId="
+													+ role.roleId
+													+ "&tree=true");
+								},
+								error : function() {
+								}
+							});
+
+						} else {
+							mini.alert("必须指定值，配置失败");
+						}
+					}
+				});
+			},
+			error : function() {
+			}
+		});
+
+	}
+
+	function saveRoleDateLevel() {
+
+		var actoinGrid = mini.get("action-grid");
+		var rows = actoinGrid.getChanges();
+		var addedArray = [];
+		var modifiedArray = [];
+		var removedArray = [];
+		for (var i = 0; i < rows.length; i++) {
+			if (rows[i]._state == "added") {
+				addedArray.push(rows[i]);
+			} else if (rows[i]._state == "modified") {
+				modifiedArray.push({
+					rank : rows[i].rank,
+					roleResourcesId : rows[i].roleResourcesId
+				});
+			} else if (rows[i]._state == "removed") {
+				removedArray.push(rows[i]);
+			}
+		}
+
+		if (modifiedArray.length > 0) {
+			$.ajax({
+				type : "put",
+				url : "/role/roleRightsLevel",
+				contentType : "application/json",
+				data : mini.encode(modifiedArray),
+				success : function(data) {
+					mini.alert("设置成功！");
+					actoinGrid.reload();
+					setEditState(false);
+				},
+				error : function(XMLHttpRequest, textStatus, errorThrown) {
+					mini.alert("更新失败：" + errorThrown);
+					actoinGrid.reload();
+					setEditState(false);
+				}
+			});
+		}
+
+	}
+
+	function onRightsRankRenderer(e) {
+		if (e.value == 1) {
+			return "个人"
+		}
+		if (e.value == 2) {
+			return "个人定制"
+		}
+		if (e.value == 3) {
+			return "部门"
+		}
+		if (e.value == 4) {
+			return "部门定制"
+		}
+		if (e.value == 5) {
+			return "组织"
+		} else {
+			return "未知级别"
+		}
+	}
+
+	function onDefaultBooleanRenderer(e) {
+		if (e.value)
+			return "是";
+		else
+			return "否";
+	}
+</script>
+<title>角色管理</title>
+</head>
+<body style="margin: 0; padding: 0; border: 0; width: 100%; height: 100%; overflow: visible;">
+	<div class="mini-splitter" vertical="true" style="width: 100%; height: 100%;">
+		<div size="40%" showCollapseButton="true">
+			<div class="mini-toolbar" style="border-top: 0; border-left: 0; border-right: 0; padding: 2px;">
+				<table style="width: 100%;">
+					<tr>
+						<td style="width: 100%;"><a class="mini-button" onclick="createRow" iconCls="icon-add" plain="true">新增</a> <span class="separator"></span> <a class="mini-button"
+							onclick="refresh()" iconCls="icon-reload" plain="true">刷新</a></td>
+						<td style="white-space: nowrap;"><label style="font-family: Verdana;">名称: </label> <input id="keyword" class="mini-textbox" onenter="onKeyEnter" /> <a
+							class="mini-button" iconCls="icon-search" plain="true" onclick="search()">查询</a></td>
+					</tr>
+				</table>
+			</div>
+			<div class="mini-fit">
+				<div id="role-grid" class="mini-datagrid" style="width: 100%; height: 100%;" borderStyle="border:0;" url="/role/list" onselectionchanged="onSelectionChanged"
+					selectOnLoad="true" ajaxType="get" showFooter="false">
+					<div property="columns">
+						<div type="indexcolumn" width="120" align="center" headerAlign="center">序号</div>
+						<div field="roleId" width="120" headerAlign="center" allowSort="true">角色编码</div>
+						<div field="roleName" width="120" headerAlign="center" allowSort="true">
+							角色名称 <input property="editor" class="mini-textbox" style="width: 100%;" />
+						</div>
+						<div field="allUser" width="120" headerAlign="center" allowSort="true" renderer="onDefaultBooleanRenderer">
+							是否全用户 <input property="editor" name="allUser" class="mini-combobox" valueField="value" textField="text" data="[{text:'是',value:true},{text:'否',value:false}]"
+								showNullItem="true" allowInput="false" style="width: 100px;" />
+						</div>
+						<div name="action" width="120" headerAlign="center" align="center" renderer="onActionRenderer" cellStyle="padding:0;">操作</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div showCollapseButton="true">
+			<div id="role-tabs" class="mini-tabs" activeIndex="0" style="width: 100%; height: 100%;" bodyStyle="padding:0;border:0;">
+				<div title="角色成员">
+					<div class="mini-toolbar" style="padding: 2px; border-top: 0; border-left: 0; border-right: 0;">
+						<a id="addRoleUserButton" class="mini-button" iconCls="icon-add" plain="true" onclick="addRoleMembers()">添加</a> <a id="deleteRoleUserButton" class="mini-button"
+							iconCls="icon-remove" plain="true" onclick="removeRoleMembers()">删除</a>
+					</div>
+					<div class="mini-fit">
+						<div id="member-grid" class="mini-datagrid" style="width: 100%; height: 100%;" borderStyle="border:0;" url="/role/member" multiSelect="true" showFooter="false" ajaxType="get">
+							<div property="columns">
+								<div type="checkcolumn"></div>
+								<div field="userName" width="120" headerAlign="center">用户名</div>
+								<div field="realName" width="120" headerAlign="center">姓名</div>
+								<div field="email" width="100" headerAlign="center">电子邮箱</div>
+								<div type="checkboxcolumn" field="deptAdmin" trueValue="1" falseValue="0" width="60" headerAlign="center">部门管理员</div>
+								<div type="checkboxcolumn" field="systemAdmin" trueValue="1" falseValue="0" width="60" headerAlign="center">系统管理员</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div title="角色权限">
+					<div class="mini-toolbar" style="padding: 2px; border-top: 0; border-left: 0; border-right: 0;">
+						<a class="mini-button" iconCls="icon-edit" plain="true" onclick="setRoleActions()">访问权限设置</a> <span class="separator"></span> <a class="mini-button" iconCls="icon-save"
+							plain="true" onclick="saveRoleDateLevel()">保存数据权限级别</a> <span class="separator"></span> <a id="rightButton" class="mini-button" iconCls="icon-edit" plain="true"
+							onclick="setRoleDateRights()">数据权限设置</a>
+
+					</div>
+					<div class="mini-fit">
+						<div id="action-grid" class="mini-treegrid" style="width: 100%; height: 100%;" showTreeIcon="true" treeColumn="resourceName" idField="resourceId" allowCellEdit="true"
+							allowCellWrap="true" allowCellSelect="true" parentField="parentResourceId" resultAsTree="false" ajaxType="get" onselectionchanged="onResourceSelectionChanged"
+							expandOnLoad="true">
+							<div property="columns">
+								<div type="indexcolumn">序号</div>
+								<div name="resourceName" field="resourceName" width="200">权限名称</div>
+								<div field="resourceUrl" width="100">权限链接</div>
+								<div field="rank" width="120" headerAlign="center" allowSort="true" vtype="required" renderer="onRightsRankRenderer">
+									数据访问级别 <input property="editor" class="mini-combobox" valueField="value" textField="text"
+										data="[{text:'个人',value:'1'},{text:'个人定制',value:'2'},{text:'部门',value:'3'},{text:'部门定制',value:'4'},{text:'组织',value:'5'}]" showNullItem="true" allowInput="false"
+										style="width: 100px;" />
+								</div>
+
+								<div field="rightsDescription" width="100">数据权限</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Implementation-Title: Security
+Implementation-Version: 0.0.1-SNAPSHOT
+Built-By: 46083
+Implementation-Vendor-Id: com.41
+Build-Jdk: 1.8.0_221
+Implementation-URL: https://projects.spring.io/spring-boot/#/spring-bo
+ ot-starter-parent/Security
+Created-By: Maven Integration for Eclipse
+

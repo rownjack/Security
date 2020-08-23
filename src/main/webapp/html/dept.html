@@ -1,0 +1,425 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>部门管理页面</title>
+
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/themes/default/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/themes/icon.css" />
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/demo/demo.css" />
+<script type="text/javascript" src="/js/jquery-easyui-1.4/jquery.min.js"></script>
+<script type="text/javascript"
+	src="/js/jquery-easyui-1.4/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="/js/jquery-easyui-1.4/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+<script type="text/javascript" src="/js/json2.js" charset="utf-8"></script>
+<script type="text/javascript" src="/js/RoyJs.js" charset="utf-8"></script>
+
+<script type="text/javascript">
+	var pid;
+
+	$(function() {
+
+		$('#deptTree').tree({
+			url : covertURL('/department/deptTree'),
+			method : 'get',
+			lines : true,
+			onClick : function(node) {
+				$('#deptDatagrid').datagrid('load', {
+					parentDeptId : node.id
+				});
+
+				pid = node.id;
+
+			}
+
+		});
+
+		$('#deptDatagrid').datagrid({
+			title : '部门树',
+			iconCls : 'icon-save',
+			method : 'get',
+			nowrap : true,
+			autoRowHeight : false,
+			striped : false,
+			collapsible : true,
+			url : covertURL('/department/deptList'),
+			sortName : 'deptId',
+			sortOrder : 'desc',
+			idField : 'deptId',
+			fitColumns : true,
+			columns : [ [ {
+				field : 'ck',
+				checkbox : true
+			}, {
+				title : 'deptName',
+				field : 'deptName',
+				width : 200,
+				sortable : true,
+				editor : {
+					type : 'textbox'
+				}
+			},
+
+			{
+				field : 'deptCode',
+				title : 'deptCode',
+				width : 150,
+				editor : {
+					type : 'textbox'
+				}
+			},
+
+			{
+				field : 'parentDeptId',
+				title : 'parentDeptId',
+				width : 120,
+				editor : {
+					type : 'combobox',
+					options : {
+						valueField : 'deptId',
+						textField : 'deptName',
+						method : 'get',
+						url : '/department/deptList'
+					}
+				}
+			//    formatter: function(value,row,index){
+			//			if (row.parentDepartmentId){
+			//				return row.DepartmentName;
+			//			} else {
+			//				return value;
+			//			}
+			//		}
+
+			},
+
+			{
+				field : 'deptDN',
+				title : 'deptDN',
+				width : 320,
+				align : 'center',
+				editor : {
+					type : 'textbox'
+
+				}
+
+			},
+
+			{
+				field : 'sortField',
+				title : 'sortField',
+				width : 100,
+				editor : {
+					type : 'numberbox'
+				}
+			}
+
+			] ],
+			pagination : false,
+			pageSize : 20,
+			pageList : [ 20, 40, 60, 80, 100 ],
+			rownumbers : true,
+			toolbar : [ {
+				id : 'btnAddDepartment',
+				text : '添加',
+				iconCls : 'icon-add',
+				handler : function() {
+					//	addDepartment();
+					$('#btnSaveDepartment').linkbutton('enable');
+					$('#btnRejctDepartment').linkbutton('enable');
+					addDepartment();
+				}
+			}, {
+				id : 'btnEditDepartment',
+				text : '编辑',
+				iconCls : 'icon-edit',
+				handler : function() {
+					$('#btnSaveDepartment').linkbutton('enable');
+					$('#btnRejctDepartment').linkbutton('enable');
+					editDepartment();
+				}
+			}, {
+				id : 'btnRemoveDepartment',
+				text : '删除',
+				iconCls : 'icon-remove',
+				handler : function() {
+					removeDepartment();
+				}
+			}, '-', {
+				id : 'btnSaveDepartment',
+				text : '保存',
+				iconCls : 'icon-save',
+				disabled : true,
+				handler : function() {
+					$('#btnSaveDepartment').linkbutton('disable');
+					$('#btnRejctDepartment').linkbutton('disable');
+					updateRow();
+				}
+			}, {
+				id : 'btnRejctDepartment',
+				text : '取消',
+				iconCls : 'icon-undo',
+				disabled : true,
+				handler : function() {
+					$('#btnSaveDepartment').linkbutton('disable');
+					$('#btnRejctDepartment').linkbutton('disable');
+					reject();
+				}
+			}
+
+			]
+
+		});
+
+		//	setButtion();
+	});
+
+	//------------------------------------------------------------------------------------------------
+
+	var editIndex = undefined;
+
+	function endEditing() {
+		if (editIndex == undefined) {
+			return true
+		}
+		if ($('#deptDatagrid').datagrid('validateRow', editIndex)) {
+			$('#deptDatagrid').datagrid('endEdit', editIndex);
+			editIndex = undefined;
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	function setButtion() {
+		$('#btnAddRole').linkbutton('enable');
+		$('#btnEditRole').linkbutton('enable');
+		$('#btnRemoveRole').linkbutton('enable');
+	}
+
+	function addDepartment() {
+		if (endEditing()) {
+			$('#deptDatagrid').datagrid('appendRow', {
+				deptDN : '',
+				deptCode : '',
+				parentDeptId : pid,
+				deptName : '',
+				sortField : ''
+			});
+			editIndex = $('#deptDatagrid').datagrid('getRows').length - 1;
+			$('#deptDatagrid').datagrid('selectRow', editIndex).datagrid(
+					'beginEdit', editIndex);
+		}
+	}
+
+	function editDepartment() {
+		if (endEditing()) {
+
+			var rows = $('#deptDatagrid').datagrid('getSelections');
+
+			if (rows.length > 1) {
+				$.messager.alert('我的消息', "仅支持编辑一条记录", 'info');
+			} else if (rows.length == 1) {
+
+				$('#btnSaveDepartment').linkbutton('enable');
+				$('#btnRejctDepartment').linkbutton('enable');
+
+				var row = $('#deptDatagrid').datagrid('getSelected');
+				editIndex = $('#deptDatagrid').datagrid('getRowIndex', row);
+				$('#deptDatagrid').datagrid('selectRow', editIndex).datagrid(
+						'beginEdit', editIndex);
+
+			} else {
+				alert("请选择要编辑的记录");
+			}
+
+		}
+	}
+
+	function removeDepartment() {
+		if (endEditing()) {
+			var ids = [];
+			var rows = $('#deptDatagrid').datagrid('getSelections');
+			for (var i = 0; i < rows.length; i++) {
+				ids.push(rows[i].deptId);
+			}
+
+			if (ids.length > 0) {
+
+				$.messager
+						.confirm(
+								'确认',
+								'您是否要删除当前选中记录',
+								function(r) {
+									if (r) {
+
+										$
+												.ajax({
+													type : "delete",
+													url : "/department/deleteDept",
+													contentType : "application/json",
+													data : JSON.stringify(ids),
+													success : function(text) {
+														//  grid.reload();
+														$.messager.alert(
+																'我的消息', "删除成功",
+																'info');
+
+														$('#deptDatagrid')
+																.datagrid(
+																		'options').url = covertURL('/department/deptList');
+														$('#deptTree').tree(
+																'options').url = covertURL('/department/deptTree');
+														$('#deptTree').tree(
+																"reload");
+														$('#deptDatagrid')
+																.datagrid(
+																		'reload');
+														$('#deptDatagrid')
+																.datagrid(
+																		'clearSelections');
+													},
+													error : function(
+															MLHttpRequest,
+															textStatus,
+															errorThrown) {
+														alert("失败："
+																+ errorThrown);
+
+													}
+												});
+
+									}
+								});
+
+			}
+		}
+
+	}
+
+	function updateRow() {
+
+		if (endEditing()) {
+
+			var addedArray = [];
+			var modifiedArray = [];
+
+			var insertRows = $('#deptDatagrid').datagrid('getChanges',
+					"inserted");
+
+			if (insertRows.length > 0) {
+				for (var i = 0; i < insertRows.length; i++) {
+					addedArray.push({
+						"deptDN" : insertRows[i].deptDN,
+						"deptCode" : insertRows[i].deptCode,
+						"parentDeptId" : insertRows[i].parentDeptId,
+						"deptName" : insertRows[i].deptName,
+						"sortField" : insertRows[i].sortField
+					});
+				}
+
+			}
+
+			var updateRows = $('#deptDatagrid').datagrid('getChanges',
+					"updated");
+
+			if (updateRows.length > 0) {
+				for (var i = 0; i < updateRows.length; i++) {
+					modifiedArray.push({
+						"deptId" : updateRows[i].deptId,
+						"deptDN" : updateRows[i].deptDN,
+						"deptCode" : updateRows[i].deptCode,
+						"parentDeptId" : updateRows[i].parentDeptId,
+						"deptName" : updateRows[i].deptName,
+						"sortField" : updateRows[i].sortField
+					});
+				}
+
+			}
+
+			if (addedArray.length > 0) {
+				$
+						.ajax({
+							type : "post",
+							url : "/department/createDept",
+							contentType : "application/json",
+							data : JSON.stringify(addedArray),
+							success : function(data) {
+								$.messager.alert('我的消息', "创建成功", 'info');
+
+								$('#deptDatagrid').datagrid('options').url = covertURL('/department/deptList');
+								$('#deptDatagrid').datagrid("reload");
+
+							},
+							error : function(XMLHttpRequest, textStatus,
+									errorThrown) {
+								alert("创建失败：" + errorThrown);
+
+							}
+						});
+			}
+
+			if (modifiedArray.length > 0) {
+				$
+						.ajax({
+							type : "put",
+							url : "/department/editDept",
+							contentType : "application/json",
+							data : JSON.stringify(modifiedArray),
+							success : function(data) {
+
+								$.messager.alert('我的消息', "更新成功", 'info');
+								$('#deptDatagrid').datagrid('options').url = covertURL('/department/editDept');
+								$('#deptDatagrid').datagrid("reload");
+							},
+							error : function(XMLHttpRequest, textStatus,
+									errorThrown) {
+								alert("更新失败：" + errorThrown);
+
+							}
+						});
+			}
+
+		}
+
+	}
+
+	function reject() {
+
+		$('#deptDatagrid').datagrid('rejectChanges');
+		editIndex = undefined;
+
+	}
+
+	function setButtion() {
+		$('#btnAddDepartment').linkbutton('enable');
+		$('#btnEditDepartment').linkbutton('enable');
+		$('#btnRemoveDepartment').linkbutton('enable');
+
+	}
+</script>
+
+</head>
+
+<body class="easyui-layout">
+
+	<div data-options="region:'west',split:true" title="部门列表"
+		style="width: 200px;">
+
+		<ul id="deptTree"></ul>
+
+
+	</div>
+
+
+	<div data-options="region:'center',border:false">
+		<table id="deptDatagrid"></table>
+	</div>
+
+
+</body>
+
+</html>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ei41.base.mapper.RoleResourceMapper">
+
+
+	<insert id="addRoleResource" parameterType="com.ei41.base.model.RoleResource">
+		INSERT INTO
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		([roleId]
+		,[resourceId]
+		,[dataRightsId]
+		,[rank])
+		VALUES
+		(#{roleId},#{resourceId},#{dataRightsId},#{rank})
+	</insert>
+
+	<!-- <delete id="delUsers"> delete from user where id in <foreach collection="list" 
+		item="item" open="(" separator="," close=")"> #{item} </foreach> </delete> -->
+
+
+	<delete id="removeRoleMembers" parameterType="com.ei41.base.model.RoleResource">
+		DELETE FROM
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		where
+		[resourceId] =
+		#{resourceId}
+		and
+		roleId
+		=#{roleId}
+	</delete>
+
+
+
+	<delete id="deleteResourceDependcy" parameterType="Long">
+		DELETE FROM
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		where
+		[resourceId] =
+		#{resourceId}
+	</delete>
+
+
+	<delete id="deleteRoleDependcy" parameterType="Long">
+		DELETE FROM
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		where
+		[roleId] =
+		#{roleId}
+	</delete>
+
+
+
+	<delete id="deletRoleResourceById" parameterType="Long">
+		DELETE FROM
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		where
+		[id] =
+		#{id}
+	</delete>
+
+
+	<select id="isRoleMemberExist" parameterType="com.ei41.base.model.RoleResource"
+		resultType="com.ei41.base.model.RoleResource">
+		SELECT [id]
+		,[roleId]
+		,[resourceId]
+		,[dataRightsId]
+		,[rank]
+		FROM
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		where
+		[resourceId] =
+		#{resourceId}
+		and
+		roleId
+		=#{roleId}
+
+	</select>
+
+
+
+	<select id="isResourceExist" resultType="com.ei41.base.model.RoleResource">
+		SELECT [id]
+		,[roleId]
+		,[resourceId]
+		,[dataRightsId]
+		,[rank]
+		FROM
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		where
+		[resourceId] =
+		#{resourceId}
+		and
+		roleId
+		=#{roleId}
+	</select>
+
+
+
+	<select id="searchRoleResource" parameterType="Long"
+		resultType="com.ei41.base.model.RoleResource">
+		SELECT [id]
+		,[roleId]
+		,[resourceId]
+		,[dataRightsId]
+		,[rank]
+		FROM
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		where
+		roleId
+		=#{roleId}
+	</select>
+
+
+	<update id="updateRoleResource" parameterType="com.ei41.base.model.RoleResource">
+		UPDATE
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		SET
+		[roleId] = #{roleId},
+		[resourceId] =
+		#{resourceId}
+		,[dataRightsId] = #{dataRightsId}
+		,[rank] = #{rank}
+		where
+		[id] = #{id}
+	</update>
+
+
+	<select id="findRoleResourceById" resultType="com.ei41.base.model.RoleResource"
+		parameterType="Long">
+		SELECT [id]
+		,[roleId]
+		,[resourceId]
+		,[dataRightsId]
+		,[rank]
+		FROM
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE]
+		where
+		id
+		=#{id}
+	</select>
+
+
+
+
+</mapper>

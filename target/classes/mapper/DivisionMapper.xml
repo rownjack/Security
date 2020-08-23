@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ei41.base.mapper.DivisionMapper">
+	<select id="listDivision" resultType="com.ei41.base.model.Division">
+		SELECT [id]
+		,[name]
+		FROM [dbo].[BASE_COMMON_DIVISION]
+	</select>
+
+
+	<!-- <delete id="delUsers"> delete from user where id in <foreach collection="list" 
+		item="item" open="(" separator="," close=")"> #{item} </foreach> </delete> -->
+</mapper>

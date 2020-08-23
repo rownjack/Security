@@ -1,0 +1,484 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>部门管理页面</title>
+
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/themes/default/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/themes/icon.css" />
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/demo/demo.css" />
+<script type="text/javascript" src="/js/jquery-easyui-1.4/jquery.min.js"></script>
+<script type="text/javascript"
+	src="/js/jquery-easyui-1.4/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="/js/jquery-easyui-1.4/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+<script type="text/javascript" src="/js/json2.js" charset="utf-8"></script>
+<script type="text/javascript" src="/js/RoyJs.js" charset="utf-8"></script>
+
+
+<script type="text/javascript">
+	var pid;
+
+	var booleanTypeData = [ {
+		booleanType : 1,
+		text : '是'
+	}, {
+		booleanType : 0,
+		text : '否'
+	} ];
+
+	$(function() {
+		//	
+		$('#deptTree').tree({
+			url : '/department/deptTree',
+			method : 'get',
+			lines : true,
+			onClick : function(node) {
+				$('#userDatagrid').datagrid('load', {
+					deptId : node.id
+				});
+
+				pid = node.id;
+
+			}
+
+		});
+
+		$('#userDatagrid').datagrid({
+			title : '用户列表',
+			iconCls : 'icon-save',
+			method : 'get',
+			nowrap : true,
+			autoRowHeight : false,
+			striped : false,
+			collapsible : true,
+			url : covertURL('/user/userList'),
+			sortName : 'userId',
+			sortOrder : 'desc',
+			idField : 'userId',
+			fitColumns : true,
+			columns : [ [ {
+				field : 'ck',
+				checkbox : true
+			}, {
+				title : 'userName',
+				field : 'userName',
+				width : 120,
+				sortable : true,
+				editor : {
+					type : 'textbox'
+				}
+			},
+
+			{
+				field : 'realName',
+				title : 'realName',
+				width : 200,
+				editor : {
+					type : 'textbox'
+				}
+			},
+
+			{
+				field : 'deptId',
+				title : 'deptId',
+				width : 120,
+				editor : {
+					type : 'combobox',
+					options : {
+						valueField : 'deptId',
+						textField : 'deptName',
+						method : 'get',
+						url : '/department/deptList'
+					}
+				}
+			//    formatter: function(value,row,index){
+			//			if (row.parentUserId){
+			//				return row.UserName;
+			//			} else {
+			//				return value;
+			//			}
+			//		}
+
+			},
+
+			{
+				field : 'email',
+				title : 'email',
+				width : 120,
+				align : 'center',
+				editor : {
+					type : 'textbox'
+
+				}
+
+			},
+
+			{
+				field : 'divisionId',
+				title : 'divisionId',
+				width : 100,
+				editor : {
+					type : 'combobox',
+					options : {
+						valueField : 'divisionId',
+						textField : 'name',
+						method : 'get',
+						url : '/division/list'
+					}
+				}
+			},
+
+			{
+				field : 'deptAdmin',
+				title : 'deptAdmin',
+				width : 120,
+				align : 'center',
+				formatter : function(value, row, index) {
+					if (row.deptAdmin == 1) {
+						return '是';
+					} else {
+						return '否';
+					}
+				},
+				editor : {
+					type : 'combobox',
+					options : {
+						valueField : 'booleanType',
+						textField : 'text',
+						data : booleanTypeData
+					}
+
+				}
+
+			}, {
+				field : 'systemAdmin',
+				title : 'systemAdmin',
+				width : 120,
+				align : 'center',
+				formatter : function(value, row, index) {
+					if (row.systemAdmin == 1) {
+						return '是';
+					} else {
+						return '否';
+					}
+				},
+				editor : {
+					type : 'combobox',
+					options : {
+						valueField : 'booleanType',
+						textField : 'text',
+						data : booleanTypeData
+					}
+
+				}
+
+			}
+
+			] ],
+			pagination : false,
+			pageSize : 20,
+			pageList : [ 20, 40, 60, 80, 100 ],
+			rownumbers : true,
+			toolbar : [ {
+				id : 'btnAddUser',
+				text : '添加',
+				iconCls : 'icon-add',
+				handler : function() {
+					//	addUser();
+					$('#btnSaveUser').linkbutton('enable');
+					$('#btnRejctUser').linkbutton('enable');
+					addUser();
+				}
+			}, {
+				id : 'btnEditUser',
+				text : '编辑',
+				iconCls : 'icon-edit',
+				handler : function() {
+					$('#btnSaveUser').linkbutton('enable');
+					$('#btnRejctUser').linkbutton('enable');
+					editUser();
+				}
+			}, {
+				id : 'btnRemoveUser',
+				text : '删除',
+				iconCls : 'icon-remove',
+				handler : function() {
+					removeUser();
+				}
+			}, '-', {
+				id : 'btnSaveUser',
+				text : '保存',
+				iconCls : 'icon-save',
+				disabled : true,
+				handler : function() {
+					$('#btnSaveUser').linkbutton('disable');
+					$('#btnRejctUser').linkbutton('disable');
+					updateRow();
+				}
+			}, {
+				id : 'btnRejctUser',
+				text : '取消',
+				iconCls : 'icon-undo',
+				disabled : true,
+				handler : function() {
+					$('#btnSaveUser').linkbutton('disable');
+					$('#btnRejctUser').linkbutton('disable');
+					reject();
+				}
+			}
+
+			]
+
+		});
+
+		//	setButtion();
+	});
+
+	//------------------------------------------------------------------------------------------------
+
+	var editIndex = undefined;
+
+	function endEditing() {
+		if (editIndex == undefined) {
+			return true
+		}
+		if ($('#userDatagrid').datagrid('validateRow', editIndex)) {
+			;
+			$('#userDatagrid').datagrid('endEdit', editIndex);
+			editIndex = undefined;
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	function addUser() {
+		if (endEditing()) {
+			$('#userDatagrid').datagrid('appendRow', {
+				userName : '',
+				realName : '',
+				deptId : pid,
+				email : '',
+				divisionId : 1,
+				deptAdmin : 0,
+				systemAdmin : 0
+			});
+			editIndex = $('#userDatagrid').datagrid('getRows').length - 1;
+			$('#userDatagrid').datagrid('selectRow', editIndex).datagrid(
+					'beginEdit', editIndex);
+		}
+	}
+
+	function editUser() {
+
+		if (endEditing()) {
+
+			var rows = $('#userDatagrid').datagrid('getSelections');
+
+			if (rows.length > 1) {
+				$.messager.alert('我的消息', "仅支持编辑一条记录", 'info');
+			} else if (rows.length == 1) {
+
+				$('#btnSaveUser').linkbutton('enable');
+				$('#btnRejctUser').linkbutton('enable');
+
+				var row = $('#userDatagrid').datagrid('getSelected');
+				editIndex = $('#userDatagrid').datagrid('getRowIndex', row);
+				$('#userDatagrid').datagrid('selectRow', editIndex).datagrid(
+						'beginEdit', editIndex);
+
+			} else {
+				alert("请选择要编辑的记录");
+			}
+
+		}
+	}
+
+	function removeUser() {
+
+		if (endEditing()) {
+			var ids = [];
+			var rows = $('#userDatagrid').datagrid('getSelections');
+			for (var i = 0; i < rows.length; i++) {
+				ids.push(rows[i].userId);
+			}
+
+			if (ids.length > 0) {
+
+				$.messager
+						.confirm(
+								'确认',
+								'您是否要删除当前选中记录',
+								function(r) {
+									if (r) {
+
+										$
+												.ajax({
+													type : "delete",
+													url : "/user/delete",
+													contentType : "application/json",
+													data : JSON.stringify(ids),
+													success : function(text) {
+														//  grid.reload();
+														$.messager.alert(
+																'我的消息', "删除成功",
+																'info');
+														$('#userDatagrid')
+																.datagrid(
+																		'options').url = covertURL('/user/userList');
+														$('#userDatagrid')
+																.datagrid(
+																		'reload');
+														$('#userDatagrid')
+																.datagrid(
+																		'clearSelections');
+
+													},
+													error : function(
+															MLHttpRequest,
+															textStatus,
+															errorThrown) {
+														alert("失败："
+																+ errorThrown);
+
+													}
+												});
+
+									}
+								});
+
+			}
+		}
+
+	}
+
+	function updateRow() {
+
+		if (endEditing()) {
+
+			var addedArray = [];
+			var modifiedArray = [];
+
+			var insertRows = $('#userDatagrid').datagrid('getChanges',
+					"inserted");
+
+			if (insertRows.length > 0) {
+				for (var i = 0; i < insertRows.length; i++) {
+					addedArray.push({
+						"userName" : insertRows[i].userName,
+						"realName" : insertRows[i].realName,
+						"deptId" : insertRows[i].deptId,
+						"email" : insertRows[i].email,
+						"divisionId" : insertRows[i].divisionId,
+						"deptAdmin" : insertRows[i].deptAdmin,
+						"systemAdmin" : insertRows[i].systemAdmin
+					});
+				}
+
+			}
+
+			var updateRows = $('#userDatagrid').datagrid('getChanges',
+					"updated");
+
+			if (updateRows.length > 0) {
+				for (var i = 0; i < updateRows.length; i++) {
+					modifiedArray.push({
+						"userId" : updateRows[i].userId,
+						"userName" : updateRows[i].userName,
+						"realName" : updateRows[i].realName,
+						"deptId" : updateRows[i].deptId,
+						"email" : updateRows[i].email,
+						"divisionId" : updateRows[i].divisionId,
+						"deptAdmin" : updateRows[i].deptAdmin,
+						"systemAdmin" : updateRows[i].systemAdmin
+					});
+				}
+
+			}
+
+			if (addedArray.length > 0) {
+				$
+						.ajax({
+							type : "post",
+							url : "/user/create",
+							contentType : "application/json",
+							data : JSON.stringify(addedArray),
+							success : function(data) {
+								$.messager.alert('我的消息', "创建成功", 'info');
+
+								$('#userDatagrid').datagrid('options').url = covertURL('/user/userList');
+								$('#userDatagrid').datagrid("reload");
+
+							},
+							error : function(XMLHttpRequest, textStatus,
+									errorThrown) {
+								alert("创建失败：" + errorThrown);
+
+							}
+						});
+			}
+
+			if (modifiedArray.length > 0) {
+				$
+						.ajax({
+							type : "put",
+							url : "/user/edit",
+							contentType : "application/json",
+							data : JSON.stringify(modifiedArray),
+							success : function(data) {
+
+								$.messager.alert('我的消息', "更新成功", 'info');
+								$('#userDatagrid').datagrid('options').url = covertURL('/user/userList');
+								$('#userDatagrid').datagrid("reload");
+							},
+							error : function(XMLHttpRequest, textStatus,
+									errorThrown) {
+								alert("更新失败：" + errorThrown);
+
+							}
+						});
+			}
+
+		}
+
+	}
+
+	function reject() {
+		$('#userDatagrid').datagrid('rejectChanges');
+		editIndex = undefined;
+
+	}
+
+	function setButtion() {
+		$('#btnAddUser').linkbutton('enable');
+		$('#btnEditUser').linkbutton('enable');
+		$('#btnRemoveUser').linkbutton('enable');
+
+	}
+</script>
+
+</head>
+
+<body class="easyui-layout">
+
+	<div data-options="region:'west',split:true" title="部门列表"
+		style="width: 200px;">
+
+		<ul id="deptTree"></ul>
+
+
+	</div>
+
+
+	<div data-options="region:'center',border:false">
+		<table id="userDatagrid"></table>
+	</div>
+
+
+</body>
+
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<script src="../javascript/boot1.js" type="text/javascript"></script>
+<script type="text/javascript">
+	$(function($){
+		mini.parse();
+		var grid=mini.get("dept-datagrid");
+		grid.load();
+		var tree = mini.get("dept-tree");
+		tree.on("nodeselect", function (e) {
+	    	grid.load({ parentDeptId: e.node.deptId });
+	    });
+	});
+    function filter() {
+   		var tree = mini.get("dept-tree");
+        var key = mini.get("filterKey").getValue();
+        if (key == "") {
+            tree.clearFilter();
+        } else {
+            key = key.toLowerCase();
+            tree.filter(function (node) {
+                var text = node.deptName ? node.deptName.toLowerCase() : "";
+                if (text.indexOf(key) != -1) {
+                    return true;
+                }
+            });
+        }
+    }
+    function onFilterKeyEnter(e) {
+    	filter();
+    }
+    function onActionRenderer(e) {
+        var grid = e.sender;
+        var record = e.record;
+        var uid = record._uid;
+        var rowIndex = e.rowIndex;
+
+        var s =  ' <a class="Edit_Button" href="javascript:editRow(\'' + uid + '\')">编辑</a>'
+                + ' <a class="Delete_Button" href="javascript:delRow(\'' + uid + '\')">删除</a>';
+
+        if (grid.isEditingRow(record)) {
+            s = ' <a class="Update_Button" href="javascript:updateRow(\'' + uid + '\')">更新</a>'
+                + ' <a class="Cancel_Button" href="javascript:cancelRow(\'' + uid + '\')">取消</a>'
+        }
+        return s;
+    }
+    function sync(){
+    	$.ajax({
+    		type:"get",
+            url: "/workspace/base/sync",
+            dataType:"json",
+            success: function (data) {
+    			mini.get("dept-datagrid").reload();
+    			mini.get("dept-tree").load ("/workspace/base/depart");
+            },
+            error: function () {
+            }
+        });
+    }
+    function createRow() {            
+
+        var grid=mini.get("dept-datagrid");
+    	if(grid.isEditing()){
+    		mini.alert("存在正在编辑的行，请保存或取消后再新建");
+    		return;
+    	}
+    	var tree = mini.get("dept-tree");
+		var node = tree.getSelectedNode();
+		
+		var newRow = {deptName:"",parentDeptId:null,sortField:"",deptDN:""};
+		if (node) {
+		    var newRow = {deptName:"",parentDeptId:node.deptId,sortField:"",deptDN:""};
+		}
+        grid.addRow(newRow, 0);
+     //   grid.cancelEdit();
+        grid.beginEditRow(newRow);
+    }
+    function refresh(){
+    	mini.get("dept-datagrid").reload();
+    }
+    function editRow(row_uid) {
+    	var grid=mini.get("dept-datagrid");
+        var row = grid.getRowByUID(row_uid);
+        if (row) {
+            grid.cancelEdit();
+            grid.beginEditRow(row);
+        }
+    }
+    function cancelRow(row_uid) {
+    	var grid=mini.get("dept-datagrid");
+        var row = grid.getRowByUID(row_uid);
+        grid.cancelEdit();
+        if(row._state=="added"){
+        	grid.removeRow(row,true);
+        }else{
+            grid.cancelEdit();
+        }
+    }
+    function delRow(row_uid) {
+    	var grid=mini.get("dept-datagrid");
+        var row = grid.getRowByUID(row_uid);
+        if (row) {
+            if (confirm("确定删除此记录？")) {
+                grid.loading("删除中，请稍后......");
+                var removedArray=[];
+                removedArray.push(row.deptId);
+                $.ajax({
+                	type:"delete",
+     	            url: "/department/deleteDept",
+     	            contentType : "application/json",
+     	            data:mini.encode(removedArray),
+                    success: function (text) {
+                        grid.reload();
+                        mini.get("dept-tree").load ("/department/deptList");
+                    },
+                    error: function () {
+                    }
+                });
+            }
+        }
+    }
+
+    function updateRow(row_uid) {
+    	var grid=mini.get("dept-datagrid");
+        grid.commitEdit();
+        var row = grid.getRowByUID(row_uid);
+    	grid.validateRow(row);
+        if(grid.isValid()){
+        	if(row._state){
+        		grid.loading("保存中，请稍后......");
+                var addedArray = [];
+                var modifiedArray = [];
+    	        if(row._state=="added"){
+    	        	addedArray.push({deptName:row.deptName,parentDeptId:row.parentDeptId,sortField:row.sortField,deptDN:row.deptDN});
+    	        }else if(row._state=="modified"){
+    	        	modifiedArray.push({deptId:row.deptId,deptName:row.deptName,parentDeptId:row.parentDeptId,sortField:row.sortField,deptDN:row.deptDN});
+    	        }
+
+    			if(addedArray.length>0){
+    				$.ajax({
+    		            type:"post",
+    		            url: "/department/createDept",
+    		            contentType : "application/json",
+    		            data:mini.encode(addedArray),
+    		            success: function (data) {
+				            if(data.error){
+				            	grid.reload ();
+				            	mini.alert(data.message);
+				            }else{
+				                grid.reload();
+				                mini.get("dept-tree").load ("/department/deptList");
+				            }
+
+    		            },
+    		            error: function (XMLHttpRequest, textStatus, errorThrown) {
+    		                mini.alert("创建失败："+errorThrown);
+
+    		            }
+    		        });
+    			}
+
+    			if(modifiedArray.length>0){
+    				$.ajax({
+    		            type:"put",
+    		            url: "/department/editDept",
+    		            contentType : "application/json",
+    		            data:mini.encode(modifiedArray),
+    		            success: function (data) {
+				            if(data.error){
+				            	grid.reload ();
+				            	mini.alert(data.message);
+				            }else{
+				                grid.reload();
+				                mini.get("dept-tree").load ("/department/deptList");
+				            }
+
+    		            },
+    		            error: function (XMLHttpRequest, textStatus, errorThrown) {
+    		                mini.alert("更新失败："+errorThrown);
+
+    		            }
+    		        });
+    			}
+        	}
+        }else{
+            mini.alert("存在不合法的数据，请修改后重新提交");
+            grid.beginEditRow(row);
+        }
+    }
+    
+</script>
+<title>部门管理</title>
+</head>
+<body
+	style="margin: 0; padding: 0; border: 0; width: 100%; height: 100%; overflow: visible;">
+	<div class="mini-splitter" style="width: 100%; height: 100%;">
+		<div size="240" showCollapseButton="true">
+			<div class="mini-toolbar"
+				style="padding: 2px; border-top: 0; border-left: 0; border-right: 0;">
+				<span style="padding-left: 5px;">名称：</span> <input id="filterKey"
+					class="mini-textbox" onenter="onFilterKeyEnter" /> <a
+					class="mini-button" iconCls="icon-search" plain="true"
+					onclick="filter()">查找</a>
+			</div>
+			<div class="mini-fit">
+				<ul id="dept-tree" class="mini-tree" url="/department/deptList"
+					style="width: 100%;" ajaxType="get" showTreeIcon="true"
+					textField="deptName" idField="deptId" parentField="parentDeptId"
+					resultAsTree="false" expandOnLoad="true">
+				</ul>
+			</div>
+		</div>
+		<div showCollapseButton="true">
+			<div class="mini-toolbar" style="border-bottom: 0; padding: 2px;">
+				<table style="width: 100%;">
+					<tr>
+						<td style="width: 100%;"><a class="mini-button"
+							iconCls="icon-add" onclick="createRow()" plain="true">新增</a> <a
+							class="mini-button" iconCls="icon-add" onclick="sync()"
+							plain="true">同步AD</a> <a class="mini-button"
+							iconCls="icon-reload" onclick="refresh()" plain="true">刷新</a></td>
+					</tr>
+				</table>
+			</div>
+			<div class="mini-fit">
+				<div id="dept-datagrid" class="mini-datagrid"
+					style="width: 100%; height: 100%;" url="/department/deptList"
+					idField="deptId" multiSelect="false" allowAlternating="true"
+					ajaxType="get" showFooter="false">
+					<div property="columns">
+						<div type="indexcolumn" width="120" align="center"
+							headerAlign="center">序号</div>
+						<div field="deptId" width="120" align="center"
+							headerAlign="center">部门编码</div>
+						<div field="deptDN" width="120" headerAlign="center"
+							allowSort="true" vtype="required">
+							部门DN <input property="editor" class="mini-textbox"
+								style="width: 100%;" />
+						</div>
+						<div field="deptName" width="120" headerAlign="center"
+							allowSort="true" vtype="required">
+							部门名称 <input property="editor" class="mini-textbox"
+								style="width: 100%;" />
+						</div>
+						<div type="comboboxcolumn" field="parentDeptId" width="120"
+							headerAlign="center" allowSort="false" dataType="int">
+							上级部门名称 <input property="editor" class="mini-combobox"
+								url="/department/deptList" multiSelect="false"
+								showNullItem="true" textField="deptName" valueField="deptId"
+								style="width: 100%;" ajaxType="get" />
+						</div>
+
+						<div field="sortField" width="120" headerAlign="center"
+							allowSort="true" vtype="required">
+							排序 <input property="editor" class="mini-textbox"
+								style="width: 100%;" />
+						</div>
+						<div name="action" width="120" headerAlign="center" align="center"
+							renderer="onActionRenderer" cellStyle="padding:0;">操作</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

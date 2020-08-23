@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ei41.base.mapper.DataRightsMapper">
+
+
+	<insert id="createDataRights" parameterType="com.ei41.base.model.DataRights"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO
+		[dbo].[BASE_SECURITY_DATARIGHTS]
+		([rights]
+		,[rightsDescription])
+		VALUES
+		(#{rights},#{rightsDescription})
+	</insert>
+
+
+	<update id="updateDataRights" parameterType="com.ei41.base.model.DataRights">
+		UPDATE
+		[dbo].[BASE_SECURITY_DATARIGHTS]
+		SET rights = #{rights}
+		,rightsDescription = #{rightsDescription}
+		where
+		id = #{id}
+	</update>
+
+
+	<select id="findDataRightsById" resultType="com.ei41.base.model.DataRights"
+		parameterType="Long">
+		SELECT [id]
+		,[rights]
+		,[rightsDescription]
+		FROM
+		[dbo].[BASE_SECURITY_DATARIGHTS]
+		where
+		id
+		=#{id}
+	</select>
+
+	<delete id="delteDataRights" parameterType="Long">
+		DELETE FROM
+		[dbo].[BASE_SECURITY_DATARIGHTS]
+		WHERE
+		id
+		=#{id}
+	</delete>
+
+
+
+
+
+</mapper>

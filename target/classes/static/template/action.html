@@ -1,0 +1,253 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="../javascript/boot1.js" type="text/javascript"></script>
+<link href="../style/base.css" rel="stylesheet" type="text/css" />
+
+
+
+<script type="text/javascript">
+	$(function($) {
+		mini.parse();
+	
+	});
+	function create() {
+		var grid = mini.get("action-datagrid");
+		var treeGrid=mini.get("action-tree");
+		var node = mini.get("action-tree").getSelectedNode();
+		var action = {
+			resourceName : "",
+			resourceUrl : "",
+			resourceType: 1,
+			parentResourceId : null,
+			sequence : 0
+		};
+		if (node) {
+			action.parentResourceId = node.resourceId;
+		}
+		grid.addRow(action, 0);
+	}
+	function remove() {
+		var grid = mini.get("action-datagrid");
+		grid.removeRows(grid.getSelecteds());
+	}
+
+	/*保存页面修改*/
+	function save() {
+		var grid = mini.get("action-datagrid");
+		var treeGrid=mini.get("action-tree");
+		var rows = grid.getChanges();
+		var addedArray = [];
+		var modifiedArray = [];
+		var removedArray = [];
+		for (var i = 0; i < rows.length; i++) {
+			if (rows[i]._state == "added") {
+				addedArray.push({
+					resourceName : rows[i].resourceName,
+					resourceUrl : rows[i].resourceUrl,
+					resourceType : rows[i].resourceType,
+					parentResourceId : rows[i].parentResourceId,
+					sequence : rows[i].sequence
+				});
+			} else if (rows[i]._state == "modified") {
+				modifiedArray.push({
+					resourceId : rows[i].resourceId,
+					resourceName : rows[i].resourceName,
+					resourceUrl : rows[i].resourceUrl,
+					resourceType : rows[i].resourceType,
+					parentResourceId : rows[i].parentResourceId,
+					sequence : rows[i].sequence
+				});
+			} else if (rows[i]._state == "removed") {
+				removedArray.push(rows[i].resourceId);
+			}
+		}
+		if (addedArray.length > 0) {
+		
+			$.ajax({
+				type : "post",
+				url : "/resource/createResource",
+				contentType : "application/json",
+				data : mini.encode(addedArray),
+				success : function(data) {
+					mini.alert("创建成功！");
+					grid.reload();
+					treeGrid.reload();
+				},
+				error : function(XMLHttpRequest, textStatus, errorThrown) {
+					mini.alert("创建失败：" + errorThrown);
+					grid.reload();
+				}
+			});
+		}
+
+		if (modifiedArray.length > 0) {
+			$.ajax({
+				type : "put",
+				url : "/resource/updateResource",
+				contentType : "application/json",
+				data : mini.encode(modifiedArray),
+				success : function(data) {
+					mini.alert("更新成功！");
+					grid.reload();
+					treeGrid.reload();
+				},
+				error : function(XMLHttpRequest, textStatus, errorThrown) {
+					mini.alert("更新失败：" + errorThrown);
+					grid.reload();
+				}
+			});
+		}
+		if (removedArray.length > 0) {
+			$.ajax({
+				type : "delete",
+				url : "/resource/deleteResource",
+				contentType : "application/json",
+				data : mini.encode(removedArray),
+				success : function(data) {
+					mini.alert("更新成功！");
+					grid.reload();
+					treeGrid.reload();
+				},
+				error : function(XMLHttpRequest, textStatus, errorThrown) {
+					mini.alert("更新失败：" + errorThrown);
+					grid.reload();
+				}
+			});
+		}
+	}
+
+	function refresh() {
+		var grid = mini.get("action-datagrid").reload();
+	}
+	function filter() {
+		var tree = mini.get("action-tree");
+		var key = mini.get("filterKey").getValue();
+		if (key == "") {
+			tree.clearFilter();
+		} else {
+			key = key.toLowerCase();
+			tree.filter(function(node) {
+				var text = node.resourceName ? node.resourceName.toLowerCase()
+						: "";
+				if (text.indexOf(key) != -1) {
+					return true;
+				}
+			});
+		}
+	}
+	function onFilterKeyEnter(e) {
+		var key = e.sender.getValue();
+		var tree = mini.get("action-tree");
+		if (key == "") {
+			tree.clearFilter();
+		} else {
+			key = key.toLowerCase();
+			tree.filter(function(node) {
+				var text = node.resourceName ? node.resourceName.toLowerCase()
+						: "";
+				if (text.indexOf(key) != -1) {
+					return true;
+				}
+			});
+		}
+	}
+	function onNodeSelect(e) {
+		mini.get("action-datagrid").load({
+			parentResourceId : e.node.resourceId
+		});
+	}
+	
+	
+	function onresourceRenderer(e) {
+		if (e.value==1)
+			return "菜单";
+		else
+			return "操作";
+	}
+</script>
+<title>权限管理</title>
+</head>
+<body
+	style="margin: 0; padding: 0; border: 0; width: 100%; height: 100%; overflow: visible;">
+	<div class="mini-splitter" style="width: 100%; height: 100%;">
+		<div size="240" showCollapseButton="true">
+			<div class="mini-toolbar"
+				style="padding: 2px; border-top: 0; border-left: 0; border-right: 0;">
+				<span style="padding-left: 5px;">名称：</span> <input id="filterKey"
+					class="mini-textbox" onenter="onFilterKeyEnter" /> <a
+					class="mini-button" iconCls="icon-search" plain="true"
+					onclick="filter()">过滤</a>
+			</div>
+			<div class="mini-fit">
+				<ul id="action-tree" class="mini-tree" url="/resource/resourceList"
+					style="width: 100%;" ajaxType="get" showTreeIcon="true"
+					textField="resourceName" idField="resourceId"
+					parentField="parentResourceId" resultAsTree="false"
+					expandOnLoad="true" onnodeselect="onNodeSelect">
+				</ul>
+			</div>
+		</div>
+		<div showCollapseButton="true">
+			<div class="mini-toolbar" style="border-bottom: 0; padding: 2px;">
+				<table style="width: 100%;">
+					<tr>
+						<td style="width: 100%;"><a class="mini-button"
+							iconCls="icon-add" onclick="create()" plain="true">新增</a> <a
+							class="mini-button" iconCls="icon-remove" onclick="remove()"
+							plain="true">删除</a> <span class="separator"></span> <a
+							class="mini-button" iconCls="icon-save" onclick="save()"
+							plain="true">保存</a> <span class="separator"></span> <a
+							class="mini-button" iconCls="icon-reload" onclick="refresh()"
+							plain="true">刷新</a></td>
+					</tr>
+				</table>
+			</div>
+			<!--撑满页面-->
+			<div class="mini-fit">
+				<div id="action-datagrid" class="mini-datagrid"
+					style="width: 100%; height: 100%;" url="/resource/resourceList"
+					allowCellSelect="true" allowCellEdit="true" multiSelect="true"
+					ajaxType="get" showFooter="false">
+					<div property="columns">
+						<div type="checkcolumn"></div>
+						<div type="indexcolumn" width="60" align="center"
+							headerAlign="center">序号</div>
+						<div field="resourceName" width="120" headerAlign="center"
+							allowSort="true">
+							权限名称 <input property="editor" class="mini-textbox"
+								style="width: 100%;" />
+						</div>
+						<div type="comboboxcolumn" field="parentResourceId" width="100"
+							dataType="int">
+							上级权限 <input property="editor" class="mini-combobox"
+								url="/resource/resourceList" multiSelect="false"
+								textField="resourceName" valueField="resourceId"
+								style="width: 100%;" />
+						</div>
+						<div field="resourceUrl" width="120" headerAlign="center">
+							权限链接 <input property="editor" class="mini-textbox"
+								style="width: 100%;" />
+						</div>
+
+						<div field="resourceType" width="120" headerAlign="center"
+							renderer="onresourceRenderer">
+							资源类型 <input property="editor" class="mini-combobox"
+								valueField="value" textField="text"
+								data="[{text:'菜单',value:1},{text:'操作',value:2}]" value="true"
+								style="width: 200px;" required="true" />
+						</div>
+
+						<div field="sequence" width="120" headerAlign="center">
+							排序 <input property="editor" class="mini-spinner" minValue="0"
+								maxValue="100000000" decimalPlaces="0" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</body>
+</html>

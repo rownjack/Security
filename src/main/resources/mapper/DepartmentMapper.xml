@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ei41.base.mapper.DepartmentMapper">
+	<select id="queryList" resultType="com.ei41.base.model.Department">
+		SELECT [deptId]
+		,[deptName]
+		,[deptDN]
+		,[parentDeptId]
+		,[deptCode]
+		,[sortField]
+		FROM
+		[dbo].[BASE_COMMON_DEPART]
+		where
+		orgId = #{orgId}
+	</select>
+
+
+	<select id="querysubList" resultType="com.ei41.base.model.Department"
+		parameterType="Long">
+		SELECT [deptId]
+		,[deptName]
+		,[deptDN]
+		,[parentDeptId]
+		,[deptCode]
+		,[sortField]
+		FROM [dbo].[BASE_COMMON_DEPART]
+		where
+		parentDeptId=
+		#{parentDeptId} and orgId = #{orgId}
+	</select>
+
+
+
+	<select id="findDepartById" resultType="com.ei41.base.model.Department"
+		parameterType="Long">
+		SELECT [deptId]
+		,[deptName]
+		,[deptDN]
+		,[parentDeptId]
+		,[deptCode]
+		,[sortField]
+		FROM [dbo].[BASE_COMMON_DEPART]
+		where
+		deptId = #{deptId}
+	</select>
+
+	<insert id="save">
+		INSERT INTO [dbo].[BASE_COMMON_DEPART]
+		([deptName]
+		,[deptDN]
+		,[parentDeptId]
+		,[deptCode]
+		,[sortField],[orgId])
+		VALUES
+		(
+		#{deptName},
+		#{deptDN},
+		#{parentDeptId},#{deptCode},#{sortField},#{orgId})
+	</insert>
+
+	<update id="updateDepartment">
+		UPDATE [dbo].[BASE_COMMON_DEPART]
+		set
+		deptName = #{deptName},
+		deptDN = #{deptDN},
+		parentDeptId =
+		#{parentDeptId},
+		deptCode =
+		#{deptCode},
+		sortField = #{sortField}
+		where
+		deptId = #{deptId}
+	</update>
+
+	<delete id="batchDelete">
+		DELETE FROM [dbo].[BASE_COMMON_DEPART] where deptId in
+		<foreach collection="array" item="item" open="(" separator=","
+			close=")">
+			#{item}
+		</foreach>
+	</delete>
+
+
+	<delete id="deleteDepartment" parameterType="Long">
+		DELETE FROM
+		[dbo].[BASE_COMMON_DEPART]
+		WHERE
+		deptId = #{deptId}
+	</delete>
+
+
+
+	<select id="findDepartmentLeaf" parameterType="Long"
+		resultType="com.ei41.base.model.Department">
+		SELECT [deptId]
+		,[deptName]
+		,[deptDN]
+		,[parentDeptId]
+		,[deptCode]
+		,[sortField]
+		FROM
+		[dbo].[BASE_COMMON_DEPART]
+		where
+		parentDeptId =
+		#{deptId}
+	</select>
+
+
+
+	<!-- <delete id="delUsers"> delete from user where id in <foreach collection="list" 
+		item="item" open="(" separator="," close=")"> #{item} </foreach> </delete> -->
+</mapper>

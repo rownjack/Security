@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ei41.base.mapper.ResourceMapper">
+	<select id="searchTotalResourceList" resultType="com.ei41.base.model.Resource">
+		SELECT
+		[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[imgUrl]
+		,[sequence]
+		FROM [dbo].[BASE_SECURITY_RESOURCE]
+		order by sequence
+	</select>
+
+
+
+	<select id="searchTotalMenuList" resultType="com.ei41.base.model.Resource">
+		SELECT
+		[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[imgUrl]
+		,[sequence]
+		FROM [dbo].[BASE_SECURITY_RESOURCE]
+		where resourceType =1 order by
+		sequence
+	</select>
+
+
+	<select id="searchSubResourceList" resultType="com.ei41.base.model.Resource"
+		parameterType="Long">
+		SELECT [resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[imgUrl]
+		,[sequence]
+		FROM
+		[dbo].[BASE_SECURITY_RESOURCE]
+		where
+		parentresourceId=
+		#{parentresourceId} order by sequence
+	</select>
+
+
+
+	<select id="searchResourceById" resultType="com.ei41.base.model.Resource"
+		parameterType="Long">
+		SELECT [resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentresourceId]
+		,[resourceType]
+		,[imgUrl]
+		,[sequence]
+		FROM
+		[dbo].[BASE_SECURITY_RESOURCE]
+		where
+		resourceId = #{resourceId}
+	</select>
+
+	<insert id="createResource" parameterType="com.ei41.base.model.Resource">
+		INSERT INTO
+		[dbo].[BASE_SECURITY_RESOURCE]
+		([resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[imgUrl]
+		,[sequence])
+		VALUES(
+		#{resourceName},
+		#{resourceUrl},
+		#{parentResourceId},#{resourceType},#{imgUrl},#{sequence})
+	</insert>
+
+	<update id="updateResource" parameterType="com.ei41.base.model.Resource">
+		UPDATE
+		[dbo].[BASE_SECURITY_RESOURCE]
+		set
+		resourceName = #{resourceName},
+		resourceUrl =
+		#{resourceUrl},
+		parentResourceId =
+		#{parentResourceId},
+		resourceType =
+		#{resourceType},
+		imgUrl =
+		#{imgUrl},
+		sequence = #{sequence}
+		where
+		resourceId =
+		#{resourceId}
+	</update>
+
+
+	<delete id="deleteResource" parameterType="Long">
+		DELETE FROM
+		[dbo].[BASE_SECURITY_RESOURCE]
+		WHERE
+		resourceId = #{resourceId}
+	</delete>
+
+
+
+
+	<select id="searchRoleResourceList" resultType="com.ei41.base.model.RoleDataRightsView"
+		parameterType="Long">
+
+		select [dbo].[BASE_SECURITY_RESOURCE].[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[sequence]
+		,[rank]
+		,[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].id as roleResourcesId
+		,dataRightsId
+		,rights
+		,rightsDescription
+		from
+		[dbo].[BASE_SECURITY_ROLE] inner join
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE] ON
+		[BASE_SECURITY_ROLE].roleId =
+		[BASE_SECURITY_REL_ROLE_RESOURCE].[roleId] inner join
+		[dbo].[BASE_SECURITY_RESOURCE]
+		ON
+		[BASE_SECURITY_RESOURCE].[resourceId]=[BASE_SECURITY_REL_ROLE_RESOURCE].[resourceId]
+		left outer join
+		[dbo].[BASE_SECURITY_DATARIGHTS] ON [dbo].[BASE_SECURITY_DATARIGHTS].id = [BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId
+		where
+		[dbo].[BASE_SECURITY_ROLE].roleId
+		= #{roleId} order by sequence,resourceId
+	</select>
+
+
+	<select id="searchRoleResourceLeaf" resultType="com.ei41.base.model.RoleDataRightsView"
+		parameterType="Long">
+		EXEC
+		[dbo].[Search_Resouce_Leaf]
+		@roleId =#{roleId}
+	</select>
+
+
+
+
+	<!-- <delete id="delUsers"> delete from user where id in <foreach collection="list" 
+		item="item" open="(" separator="," close=")"> #{item} </foreach> </delete> -->
+</mapper>

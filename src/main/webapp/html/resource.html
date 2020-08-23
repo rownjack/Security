@@ -1,0 +1,467 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE8"
+	content="ie=edge" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>资源管理页面</title>
+
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/themes/default/easyui.css" />
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/themes/icon.css" />
+<link rel="stylesheet" type="text/css"
+	href="/js/jquery-easyui-1.4/demo/demo.css" />
+<script type="text/javascript" src="/js/jquery-easyui-1.4/jquery.min.js"></script>
+<script type="text/javascript"
+	src="/js/jquery-easyui-1.4/jquery.easyui.min.js"></script>
+<script type="text/javascript"
+	src="/js/jquery-easyui-1.4/locale/easyui-lang-zh_CN.js" charset="utf-8"></script>
+<script type="text/javascript" src="/js/json2.js" charset="utf-8"></script>
+<script type="text/javascript" src="/js/RoyJs.js" charset="utf-8"></script>
+
+<script type="text/javascript">
+   
+   
+  var pid;
+
+  var resourceTypeData = [{
+	resourceType: 1,
+	text: '菜单'
+     },{
+	resourceType: 2,
+	text: '功能'
+    }];
+
+ 
+  $(function() {
+   		
+		$('#resourceTree').tree({
+			url : covertURL('/resource/searchTreeList'),
+			method : 'get',
+			lines : true,
+			onClick : function(node) {
+				$('#resourceDatagrid').datagrid('load', {
+					parentResourceId : node.id
+				});
+			
+				pid= node.id;
+			
+			}
+
+		});
+
+		$('#resourceDatagrid').datagrid(
+				{
+					title : '资源列表',
+					iconCls : 'icon-save',
+					method : 'get',
+					nowrap : true,
+					autoRowHeight : false,
+					striped : false,
+					collapsible : true,
+					url : covertURL('/resource/resourceList'),
+					sortName : 'resourceId',
+					sortOrder : 'desc',
+					idField : 'resourceId',
+					fit:true,
+					fitColumns: true,
+					singleSelect:true,
+					columns : [ [
+						{
+							field : 'ck',
+							checkbox : true
+						}, {
+							title : 'resourceName',
+							field : 'resourceName',
+							width : 120,
+							sortable : true,
+							editor:{
+								type:'textbox'
+							}
+						},
+
+					{
+						field : 'resourceUrl',
+						title : 'resourceUrl',
+						width : 400,
+						editor:{
+							type:'textbox'
+						}
+					},
+					{
+						field : 'parentResourceId',
+						title : 'parentResourceId',
+						width : 120,
+						editor:{
+							type:'combobox',
+							options:{
+								valueField:'resourceId',
+								textField:'resourceName',
+								method:'get',
+								url:'/resource/resourceList'
+							}
+						}
+					},
+
+					{
+						field : 'resourceType',
+						title : 'resourceType',
+						width : 120,
+						align : 'center',
+						formatter : function(value, row, index) {
+							if (row.resourceType == 1) {
+								return '菜单';
+							} else {
+								return '功能';
+							}
+						},
+						editor:{
+							type:'combobox',
+							options:{
+								valueField:'resourceType',
+								textField:'text',
+								data: resourceTypeData
+								}
+
+					} 
+					
+					},
+					
+					{
+						field : 'sequence',
+						title : 'sequence',
+						width : 80,
+						editor:{
+							type:'numberbox'
+						}
+					}
+					
+					] ],
+					pagination : false,
+					pageSize : 20,
+					pageList : [ 20, 40, 60, 80, 100 ],
+					rownumbers : true,
+					toolbar : [ {
+						id : 'btnAddResource',
+						text : '添加',
+						iconCls : 'icon-add',
+						handler : function() {
+							//	addResource();
+						$('#btnSaveResource').linkbutton('enable');
+						$('#btnRejctResource').linkbutton('enable');
+							addResource();
+						}
+					}, {
+						id : 'btnEditResource',
+						text : '编辑',
+						iconCls : 'icon-edit',
+						handler : function() {
+						
+							$('#btnSaveResource').linkbutton('enable');
+							$('#btnRejctResource').linkbutton('enable');
+							editResource();
+						}
+					},{
+						id : 'btnRemoveResource',
+						text : '删除',
+						iconCls : 'icon-remove',
+						handler : function() {
+							removeResource();
+						}
+					},
+					'-', {
+						id : 'btnSaveResource',
+						text : '保存',
+						iconCls : 'icon-save',
+						disabled:true,
+						handler : function() {
+						$('#btnSaveResource').linkbutton('disable');
+					   $('#btnRejctResource').linkbutton('disable');
+							updateRow();
+						}
+					},
+					{
+						id : 'btnRejctResource',
+						text : '取消',
+						iconCls : 'icon-undo',
+						disabled:true,
+						handler : function() {
+						$('#btnSaveResource').linkbutton('disable');
+						$('#btnRejctResource').linkbutton('disable');
+							reject();
+						}
+					}
+					
+					]
+
+				});
+	
+		setButtion();
+	});
+
+
+	var editIndex = undefined;
+	
+	function endEditing(){
+		if (editIndex == undefined){return true}
+		if ($('#resourceDatagrid').datagrid('validateRow', editIndex)){;	
+			$('#resourceDatagrid').datagrid('endEdit', editIndex);
+			editIndex = undefined;
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+		
+    function setButtion(){
+	    $('#btnAddResource').linkbutton('enable');
+	   $('#btnEditResource').linkbutton('enable');
+	   $('#btnRemoveResource').linkbutton('enable');
+
+        }
+		
+	
+	function addResource(){
+		if (endEditing()){
+			$('#resourceDatagrid').datagrid('appendRow',{resourceName:' ',resourceUrl:' ',parentResourceId:pid,resourceType:1,sequence:0});
+			editIndex = $('#resourceDatagrid').datagrid('getRows').length-1;
+			$('#resourceDatagrid').datagrid('selectRow', editIndex)
+					.datagrid('beginEdit', editIndex);
+	   }
+	}
+	
+
+
+     function accept(){
+			if (endEditing()){
+				$('#dg').datagrid('acceptChanges');
+			}
+		}
+
+     function getSelections(){
+		var ids = [];
+		var rows = $('#resourceDatagrid').datagrid('getSelections');
+		for(var i=0;i<rows.length;i++){
+			ids.push(rows[i].resourceName);
+		}
+		alert(ids.join(':'));
+	}
+
+	
+     function editResource(){
+    	 if (endEditing()){
+		
+		
+		 var rows = $('#resourceDatagrid').datagrid('getSelections');
+		
+		if(rows.length>1)
+			{
+			alert("仅支持编辑一条记录");
+			}else if(rows.length==1) {
+		 
+		 $('#btnSaveResource').linkbutton('enable');
+		$('#btnRejctResource').linkbutton('enable');
+		 
+	    var row= $('#resourceDatagrid').datagrid('getSelected');
+	    editIndex = $('#resourceDatagrid').datagrid('getRowIndex',row);
+	    $('#resourceDatagrid').datagrid('selectRow',
+	    		editIndex).datagrid('beginEdit',
+	    				editIndex);
+
+	      }else
+	      {
+	      alert("请选择要编辑的记录");
+	      }
+		
+    	 }
+	  }
+			
+
+	function removeit() {
+		if (editIndex == undefined) {
+			return
+		}
+		$('#resourceDatagrid').datagrid('cancelEdit', editIndex).datagrid(
+				'deleteRow', editIndex);
+		editIndex = undefined;
+	}
+	function accept() {
+		if (endEditing()) {
+			$('#resourceDatagrid').datagrid('acceptChanges');
+		}
+	}
+	function reject() {
+		$('#resourceDatagrid').datagrid('rejectChanges');
+		editIndex = undefined;
+	}
+
+	
+	
+	 function updateRow() {
+	     
+	     if (endEditing()){
+	     
+	           var addedArray = [];
+               var modifiedArray = [];
+
+            var insertRows = $('#resourceDatagrid').datagrid('getChanges',"inserted");
+		    if(insertRows.length>0){
+		    for(var i=0;i<insertRows.length;i++){
+			     addedArray.push({"resourceName":insertRows[i].resourceName,
+			                 "resourceUrl":insertRows[i].resourceUrl,
+			                 "parentResourceId":insertRows[i].parentResourceId,
+			                 "resourceType":insertRows[i].resourceType,
+			                 "sequence":insertRows[i].sequence
+			                 });
+		     }
+		   
+		     }
+          
+         
+           var updateRows = $('#resourceDatagrid').datagrid('getChanges',"updated");
+            
+            if(updateRows.length>0){
+            for(var i=0;i<updateRows.length;i++){
+			modifiedArray.push({"resourceId":updateRows[i].resourceId,
+			                    "resourceName":updateRows[i].resourceName,
+			                    "resourceUrl":updateRows[i].resourceUrl,
+			                    "parentResourceId":updateRows[i].parentResourceId,
+			                    "resourceType":updateRows[i].resourceType,
+			                    "sequence":updateRows[i].sequence
+			                   });
+		     }
+        
+            }
+            
+         
+         
+         	if(addedArray.length>0){
+    				$.ajax({
+    		            type:"post",
+    		            url: "/resource/createResource",
+    		            contentType : "application/json",
+    		            data: JSON.stringify(addedArray),
+    		            success: function (data) {
+    		            	 $('#resourceDatagrid').datagrid('options').url= covertURL('/resource/resourceList');
+    		            	
+    		            	 $('#resourceTree').tree('options').url= covertURL('/resource/searchTreeList');
+    		            	 
+    		            	 $('#resourceTree').tree("reload");
+				            $('#resourceDatagrid').datagrid("reload");
+
+    		            },
+    		            error: function (XMLHttpRequest, textStatus, errorThrown) {
+    		                alert("创建失败："+errorThrown);
+
+    		            }
+    		        });
+    			}
+         
+         
+         
+         
+         if(modifiedArray.length>0){
+    				$.ajax({
+    		            type:"put",
+    		            url: "/resource/updateResource",
+    		            contentType : "application/json",
+    		            data:JSON.stringify(modifiedArray),
+    		            success: function (data) {
+				         alert("更新成功：");
+				         $('#resourceDatagrid').datagrid('options').url=covertURL('/resource/resourceList');
+				         $('#resourceTree').tree('options').url= covertURL('/resource/searchTreeList');
+				         $('#resourceTree').tree("reload"); 
+				         $('#resourceDatagrid').datagrid("reload");
+
+    		            },
+    		            error: function (XMLHttpRequest, textStatus, errorThrown) {
+    		               alert("更新失败："+errorThrown);
+
+    		            }
+    		        });
+    			}
+
+	    }
+	}
+	
+	
+	
+	
+	function removeResource(){
+	if (endEditing()){
+	    var ids = [];
+	    var rows = $('#resourceDatagrid').datagrid('getSelections');
+	    for(var i=0;i<rows.length;i++){
+			ids.push(rows[i].resourceId);
+		}
+		
+		if(ids.length>0){
+		
+			$.messager.confirm('确认', '您是否要删除当前选中记录', function(r) {
+				if (r) {	
+			
+		$.ajax({
+                	type:"delete",
+     	            url: "/resource/deleteResource",
+     	            contentType : "application/json",
+     	            data:JSON.stringify(ids),
+                    success: function (text) {
+                      //  grid.reload();
+                       $('#resourceDatagrid').datagrid('options').url = covertURL('/resource/resourceList');
+                       $('#resourceTree').tree('options').url= covertURL('/resource/searchTreeList');
+                       $('#resourceTree').tree("reload");                       
+                       $('#resourceDatagrid').datagrid('reload');
+                    },
+                    error: function (MLHttpRequest, textStatus, errorThrown) {
+                     alert("失败："+errorThrown);
+                    
+                    }
+                });
+	
+				}
+			});
+				
+				
+				}
+	      }
+	}
+	
+	
+	
+	
+	function getChanges() {
+		if (endEditing()){
+		var ids = [];
+		var rows = $('#resourceDatagrid').datagrid('getChanges',"inserted");
+		for(var i=0;i<rows.length;i++){
+			ids.push(rows[i].resourceName);
+		}
+		alert(ids.join(':'));
+		
+	}
+	}
+</script>
+
+</head>
+
+<body class="easyui-layout">
+
+	<div data-options="region:'west',split:true" title="资源菜单"
+		style="width: 180px;">
+
+		<ul id="resourceTree"></ul>
+
+
+	</div>
+
+
+	<div data-options="region:'center',border:false">
+		<div id="resourceDatagrid"></div>
+	</div>
+
+
+</body>
+
+</html>

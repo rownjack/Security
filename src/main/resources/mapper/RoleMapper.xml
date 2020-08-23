@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ei41.base.mapper.RoleMapper">
+	<select id="searchRoleList" resultType="com.ei41.base.model.Role">
+		SELECT [roleId]
+		,[roleName]
+		,[orgId]
+		,[allUser]
+		FROM
+		[dbo].[BASE_SECURITY_ROLE] where 1=1
+		<if test="keyword != null and !keyword.equals('') ">
+			and userName like #{key}
+		</if>
+		<if test="orgId!= null and !orgId.equals('')">
+			and orgId=#{orgId}
+		</if>
+
+	</select>
+
+	<select id="findRoleById" resultType="com.ei41.base.model.Role"
+		parameterType="Long">
+		SELECT [roleId]
+		,[roleName]
+		,[orgId]
+		,[allUser]
+		FROM
+		[dbo].[BASE_SECURITY_ROLE] where [roleId] =
+		#{roleId}
+	</select>
+
+	<insert id="createRole" parameterType="com.ei41.base.model.Role">
+		INSERT INTO
+		[dbo].[BASE_SECURITY_ROLE]
+		([roleName]
+		,[orgId]
+		,[allUser])
+		VALUES
+		(#{roleName},
+		#{orgId},
+		#{allUser}
+		)
+	</insert>
+
+	<update id="updateRole" parameterType="com.ei41.base.model.Role">
+		UPDATE
+		[dbo].[BASE_SECURITY_ROLE]
+		SET
+		[roleName] =#{roleName},
+		[orgId] =#{orgId},
+		[allUser] =#{allUser}
+		where
+		[roleId] =
+		#{roleId}
+	</update>
+
+
+	<delete id="deleteRole" parameterType="Long">
+		DELETE FROM
+		[dbo].[BASE_SECURITY_ROLE]
+		where
+		[roleId] =
+		#{roleId}
+	</delete>
+
+
+	<insert id="addRoleMembers" parameterType="com.ei41.base.model.UserRole">
+		INSERT INTO
+		[dbo].[BASE_SECURITY_REL_ROLE_USER]
+		([roleId]
+		,[userId])
+		VALUES
+		(#{roleId},#{userId})
+	</insert>
+
+	<!-- <delete id="delUsers"> delete from user where id in <foreach collection="list" 
+		item="item" open="(" separator="," close=")"> #{item} </foreach> </delete> -->
+
+</mapper>

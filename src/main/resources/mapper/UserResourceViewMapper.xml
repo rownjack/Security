@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ei41.base.mapper.UserResourceViewMapper">
+	<select id="searchUserAccessRightList" resultType="com.ei41.base.model.Resource">
+		select
+		DISTINCT [resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[sequence]
+		from (
+		SELECT
+		[dbo].[BASE_SECURITY_RESOURCE].[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[sequence] FROM
+		[dbo].[BASE_COMMON_USER] INNER
+		JOIN
+		[dbo].[BASE_SECURITY_REL_ROLE_USER]
+		ON [dbo].[BASE_COMMON_USER].userId
+		=
+		[dbo].[BASE_SECURITY_REL_ROLE_USER].userId INNER JOIN
+		[dbo].[BASE_SECURITY_ROLE] ON
+		[dbo].[BASE_SECURITY_REL_ROLE_USER].roleId =
+		[dbo].[BASE_SECURITY_ROLE].roleId INNER JOIN
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE] ON
+		[dbo].[BASE_SECURITY_ROLE].roleId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].roleId INNER
+		JOIN
+		[dbo].[BASE_SECURITY_RESOURCE] ON
+		[dbo].[BASE_SECURITY_RESOURCE].resourceId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].resourceId LEFT OUTER
+		JOIN
+		[dbo].[BASE_SECURITY_DATARIGHTS] ON
+		[dbo].[BASE_SECURITY_DATARIGHTS].id =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId
+		where
+		resourceType
+		= 2
+		and [dbo].[BASE_COMMON_USER].userId = #{userId} and
+		[dbo].[BASE_SECURITY_ROLE].orgId=
+		#{orgId}
+		union
+		select
+		[dbo].[BASE_SECURITY_RESOURCE].[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[sequence]
+		from
+		[dbo].[BASE_SECURITY_ROLE] inner
+		join
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE] ON
+		[dbo].[BASE_SECURITY_ROLE].roleId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].[roleId]
+		inner join
+		[dbo].[BASE_SECURITY_RESOURCE]
+		ON
+		[dbo].[BASE_SECURITY_RESOURCE].[resourceId]=[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].resourceId
+		left outer join
+		[dbo].[BASE_SECURITY_DATARIGHTS] ON
+		[dbo].[BASE_SECURITY_DATARIGHTS].id = [dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId
+		where
+		[dbo].[BASE_SECURITY_ROLE].allUser = 1 and resourceType
+		= 2 and
+		[dbo].[BASE_SECURITY_ROLE].orgId= #{orgId}
+		) a
+		order by sequence
+	</select>
+
+
+
+	<select id="searchUserMenuList" resultType="com.ei41.base.model.Resource">
+		select DISTINCT
+		[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[sequence]
+		from (
+		SELECT
+		[dbo].[BASE_SECURITY_RESOURCE].[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[sequence] FROM
+		[dbo].[BASE_COMMON_USER] INNER
+		JOIN
+		[dbo].[BASE_SECURITY_REL_ROLE_USER]
+		ON [dbo].[BASE_COMMON_USER].userId
+		=
+		[dbo].[BASE_SECURITY_REL_ROLE_USER].userId INNER JOIN
+		[dbo].[BASE_SECURITY_ROLE] ON
+		[dbo].[BASE_SECURITY_REL_ROLE_USER].roleId =
+		[dbo].[BASE_SECURITY_ROLE].roleId INNER JOIN
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE] ON
+		[dbo].[BASE_SECURITY_ROLE].roleId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].roleId INNER
+		JOIN
+		[dbo].[BASE_SECURITY_RESOURCE] ON
+		[dbo].[BASE_SECURITY_RESOURCE].resourceId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].resourceId LEFT OUTER
+		JOIN
+		[dbo].[BASE_SECURITY_DATARIGHTS] ON
+		[dbo].[BASE_SECURITY_DATARIGHTS].id =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId
+		where
+		resourceType
+		= 1
+		and [dbo].[BASE_COMMON_USER].userId = #{userId} and
+		[dbo].[BASE_SECURITY_ROLE].orgId=
+		#{orgId}
+		union
+		select
+		[dbo].[BASE_SECURITY_RESOURCE].[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[sequence]
+		from
+		[dbo].[BASE_SECURITY_ROLE] inner
+		join
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE] ON
+		[dbo].[BASE_SECURITY_ROLE].roleId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].[roleId]
+		inner join
+		[dbo].[BASE_SECURITY_RESOURCE]
+		ON
+		[dbo].[BASE_SECURITY_RESOURCE].[resourceId]=[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].resourceId
+		left outer join
+		[dbo].[BASE_SECURITY_DATARIGHTS] ON
+		[dbo].[BASE_SECURITY_DATARIGHTS].id = [dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId
+		where
+		[dbo].[BASE_SECURITY_ROLE].allUser = 1 and resourceType
+		= 1 and
+		[dbo].[BASE_SECURITY_ROLE].orgId= #{orgId}
+		) a
+		order by sequence
+	</select>
+
+
+	<select id="searchDataRightsList" resultType="com.ei41.base.model.UserDataRights">
+		select
+		[resourceId]
+		,[resourceName]
+		,[resourceUrl]
+		,[parentResourceId]
+		,[resourceType]
+		,[sequence]
+		,[userId]
+		,[userName]
+		,[orgId]
+		,[rights]
+		,[rightsDescription]
+		,[rank]
+		from (
+		SELECT
+		[dbo].[BASE_COMMON_USER].userId,
+		[dbo].[BASE_COMMON_USER].userName,
+		[dbo].[BASE_COMMON_USER].password,
+		[dbo].[BASE_COMMON_USER].realName, [dbo].[BASE_COMMON_USER].email,
+		[dbo].[BASE_COMMON_USER].telNumber,
+		[dbo].[BASE_COMMON_USER].deptId,
+		[dbo].[BASE_COMMON_USER].divisionId,
+		[dbo].[BASE_COMMON_USER].systemAdmin,
+		[dbo].[BASE_COMMON_USER].deptAdmin,
+		[dbo].[BASE_SECURITY_RESOURCE].resourceName,
+		[dbo].[BASE_SECURITY_RESOURCE].resourceType,
+		[dbo].[BASE_SECURITY_RESOURCE].resourceUrl,
+		[dbo].[BASE_SECURITY_RESOURCE].sequence,
+		[dbo].[BASE_SECURITY_RESOURCE].parentResourceId,
+		[dbo].[BASE_SECURITY_RESOURCE].resourceId,
+		[dbo].[BASE_COMMON_USER].orgId,
+		[dbo].[BASE_SECURITY_DATARIGHTS].rights,
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].rank,
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId,
+		[dbo].[BASE_SECURITY_ROLE].roleId,
+		[dbo].[BASE_SECURITY_DATARIGHTS].rightsDescription,
+		[dbo].[BASE_SECURITY_ROLE].allUser FROM
+		[dbo].[BASE_COMMON_USER]
+		INNER
+		JOIN
+		[dbo].[BASE_SECURITY_REL_ROLE_USER] ON
+		[dbo].[BASE_COMMON_USER].userId
+		=
+		[dbo].[BASE_SECURITY_REL_ROLE_USER].userId INNER
+		JOIN
+		[dbo].[BASE_SECURITY_ROLE] ON
+		[dbo].[BASE_SECURITY_REL_ROLE_USER].roleId =
+		[dbo].[BASE_SECURITY_ROLE].roleId INNER JOIN
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE] ON
+		[dbo].[BASE_SECURITY_ROLE].roleId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].roleId INNER
+		JOIN
+		[dbo].[BASE_SECURITY_RESOURCE] ON
+		[dbo].[BASE_SECURITY_RESOURCE].resourceId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].resourceId LEFT OUTER
+		JOIN
+		[dbo].[BASE_SECURITY_DATARIGHTS] ON
+		[dbo].[BASE_SECURITY_DATARIGHTS].id =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId
+		where
+		resourceType
+		= 2
+		and [dbo].[BASE_COMMON_USER].userId = #{userId} and
+		[dbo].[BASE_SECURITY_ROLE].orgId=
+		#{orgId}
+		union
+		select
+		[dbo].[BASE_COMMON_USER].userId, [dbo].[BASE_COMMON_USER].userName,
+		[dbo].[BASE_COMMON_USER].password,
+		[dbo].[BASE_COMMON_USER].realName,
+		[dbo].[BASE_COMMON_USER].email, [dbo].[BASE_COMMON_USER].telNumber,
+		[dbo].[BASE_COMMON_USER].deptId,
+		[dbo].[BASE_COMMON_USER].divisionId,
+		[dbo].[BASE_COMMON_USER].systemAdmin,
+		[dbo].[BASE_COMMON_USER].deptAdmin,
+		[dbo].[BASE_SECURITY_RESOURCE].resourceName,
+		[dbo].[BASE_SECURITY_RESOURCE].resourceType,
+		[dbo].[BASE_SECURITY_RESOURCE].resourceUrl,
+		[dbo].[BASE_SECURITY_RESOURCE].sequence,
+		[dbo].[BASE_SECURITY_RESOURCE].parentResourceId,
+		[dbo].[BASE_SECURITY_RESOURCE].resourceId,
+		[dbo].[BASE_COMMON_USER].orgId,
+		[dbo].[BASE_SECURITY_DATARIGHTS].rights,
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].rank,
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId,
+		[dbo].[BASE_SECURITY_ROLE].roleId,
+		[dbo].[BASE_SECURITY_DATARIGHTS].rightsDescription,
+		[dbo].[BASE_SECURITY_ROLE].allUser
+		from
+		[dbo].[BASE_COMMON_USER]
+		INNER
+		JOIN
+		[dbo].[BASE_SECURITY_REL_ROLE_USER] ON
+		[dbo].[BASE_COMMON_USER].userId
+		=
+		[dbo].[BASE_SECURITY_REL_ROLE_USER].userId INNER
+		JOIN
+		[dbo].[BASE_SECURITY_ROLE] ON
+		[dbo].[BASE_SECURITY_REL_ROLE_USER].roleId =
+		[dbo].[BASE_SECURITY_ROLE].roleId INNER JOIN
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE] ON
+		[dbo].[BASE_SECURITY_ROLE].roleId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].roleId INNER
+		JOIN
+		[dbo].[BASE_SECURITY_RESOURCE] ON
+		[dbo].[BASE_SECURITY_RESOURCE].resourceId =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].resourceId LEFT OUTER
+		JOIN
+		[dbo].[BASE_SECURITY_DATARIGHTS] ON
+		[dbo].[BASE_SECURITY_DATARIGHTS].id =
+		[dbo].[BASE_SECURITY_REL_ROLE_RESOURCE].dataRightsId
+		where
+		[dbo].[BASE_SECURITY_ROLE].allUser =
+		1 and resourceType
+		= 2 and
+		[dbo].[BASE_SECURITY_ROLE].orgId= #{orgId}
+		) a where
+		a.resourceUrl
+		=#{resourceUrl};
+	</select>
+
+
+
+</mapper>

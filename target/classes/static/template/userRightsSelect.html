@@ -1,0 +1,137 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<script src="../javascript/boot1.js" type="text/javascript"></script>
+<script src="../common/UserSelectWindow.js" type="text/javascript"></script>
+<title>订单需求任务查看</title>
+
+</head>
+
+<body style="width: 100%; height: 100%;">
+
+
+	<div class="mini-fit">
+		<div class="mini-toolbar" style="padding: 2px; border-top: 0; border-left: 0; border-right: 0;">
+			<a class="mini-button" iconCls="icon-add" plain="true" onclick="add()">添加</a> <a class="mini-button" iconCls="icon-remove" plain="true" onclick="remove()">删除</a>
+		</div>
+		<div class="mini-fit">
+			<div id="userRights-grid" class="mini-datagrid" style="width: 100%; height: 100%;" borderStyle="border:0;" url="/dataRights/user" multiSelect="true" showFooter="false"
+				ajaxType="get">
+				<div property="columns">
+					<div type="checkcolumn"></div>
+					<div field="userId" width="120" headerAlign="center">id</div>
+					<div field="userName" width="120" headerAlign="center">用户名</div>
+					<div field="realName" width="120" headerAlign="center">姓名</div>
+					<div field="email" width="100" headerAlign="center">电子邮箱</div>
+					<div type="checkboxcolumn" field="deptAdmin" trueValue="1" falseValue="0" width="60" headerAlign="center">部门管理员</div>
+					<div type="checkboxcolumn" field="systemAdmin" trueValue="1" falseValue="0" width="60" headerAlign="center">系统管理员</div>
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+
+	<div class="mini-toolbar" style="text-align: center; padding-top: 8px; padding-bottom: 8px;" borderStyle="border:0;">
+		<a class="mini-button" style="width: 60px;" onclick="onOk()">确定</a> <span style="display: inline-block; width: 25px;"></span> <a class="mini-button" style="width: 60px;"
+			onclick="onCancel()">取消</a>
+	</div>
+
+
+	</div>
+
+
+	<script type="text/javascript">
+		mini.parse();
+		var grid = mini.get("userRights-grid");
+
+		function load(dataRightsId) {
+			data = {
+				dataRightsId : dataRightsId
+			};
+			mini.get("userRights-grid").load(data);
+		}
+
+		function onKeyEnter(e) {
+			search();
+		}
+
+		function getResults() {
+			mini.get("userRights-grid").selectAll();
+			return mini.get("userRights-grid").getSelecteds();
+		}
+		//////////////////////////////////
+		function closeWindow(action) {
+			if (window.CloseOwnerWindow) {
+				return window.CloseOwnerWindow(action);
+			} else {
+				window.close();
+			}
+		}
+
+		function onOk() {
+			closeWindow("ok");
+		}
+
+		function onCancel() {
+			closeWindow("cancel");
+		}
+
+		function add() {
+			var win = new UserSelectWindow();
+			win.set({
+				url : "/user/userList",
+				title : "选择成员",
+				KeyField : "keyword",
+				multiSelect : true,
+				width : 600,
+				height : 350
+			});
+
+			win.show();
+			win.search("");
+
+			//初始化数据
+			win.setData(null, function(action) {
+				if (action == "ok") {
+					//获取数据
+					var rows = win.getData();
+					if (rows.length > 0) {
+						var userNums = new Array();
+						for (var index = 0; index < rows.length; index++) {
+							//	userNums.add(rows[index].userName);
+
+							grid.addRow({
+								userId :  rows[index].userId,
+								userName : rows[index].userName,
+								realName : rows[index].realName,
+								email : rows[index].email,
+								deptId : rows[index].deptId,
+								devisionId : rows[index].devisionId,
+								deptAdmin : rows[index].deptAdmin,
+								systemAdmin : rows[index].systemAdmin
+
+							}, 0);
+
+						}
+						//	alert("22")
+				//		alert(userNums);
+
+					}
+				}
+			});
+		}
+		
+		
+		function remove(){
+			var grid = mini.get("userRights-grid");
+			var rows = grid.getSelecteds();
+			if (rows.length > 0) {
+				grid.removeRows(rows, true);
+			}
+		}	
+	</script>
+</body>
+</html>
